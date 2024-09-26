@@ -69,6 +69,8 @@ class Stylesheets():
         self._checkmark = ["light_checkbox.png", "dark_checkbox.png"]
         self._important = ["light_important.png", "dark_important.png"]
         self._settings = ["light_settings.png", "dark_settings.png"]
+        self._light_mode = ["light_light_mode.png", "dark_light_mode.png"]
+        self._dark_mode = ["light_dark_mode.png", "dark_dark_mode.png"]
 
         base_path = "/".join(base_path.split("\\")) + "/resources"
         return { "LIGHT":self.create_style(base_path, 0), "DARK":self.create_style(base_path, 1)}
@@ -408,6 +410,12 @@ class Stylesheets():
             }}
             #theme_toggle:checked{{
                 background : {self._switch_on[0]};
+            }}
+            #light_mode {{
+                image : url({base_path}/{self._light_mode[index]});
+            }}
+            #dark_mode {{
+                image : url({base_path}/{self._dark_mode[index]});
             }}
             QSplitter::handle {{
                 background : {self._frame_color[index]};
