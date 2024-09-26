@@ -1,0 +1,35 @@
+DONE:
+	preset visability based on amino acid count or user choice - Done - user choice	
+	Add delete button for nodes - Done
+	Add background color for start node, default should be white - Done
+	Rotation node, remove importance from center - Done
+	Remove input and output nodes from Delete Node - Done
+	Add "Movie Reset" to all nodes run or chain run - Done
+	Add frames and length to all nodes - Done
+	Add advanced mode title with node id - Done
+	Add fancy script viewer to show comments and simplified view for the code - Done
+	Add script summary page - Done
+	To comments text, find a way to add bullet points - Done
+	Add summary to model picker with picked object - Done
+	Add split node, and save view and other general settings (no input or outputs. only one node, cant be deleted or created by user) - Done	
+	Separate delete and other inputless and outputless nodes into a different category in the context menu - Done
+	Add simple mode: only transparency, color palette, rotation - Done
+	disable script viewer in simple mode - Done
+	remove stuff from content in simple mode, add back the summary for the pickers - Done
+	Rework the way frame count is being passed down - Done	
+	Add special atoms to model picking - Done
+	mark special amino acids in preset in atoms and coloring - Done
+	Check why the movie is slowing down after a couple of runs - movie reset fix - rotation will apply for the entire scene when everything is picked - Done
+	Fix preset not working when no submodel - should only do stuff for the one model - Done
+
+
+TODO:
+Add moving subunits preset 
+
+Test it with volumes
+
+Add volumes to the model selction
+
+Decide if I want to move the markers into a markers tab instead of models tab
+
+
