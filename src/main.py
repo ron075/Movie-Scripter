@@ -567,6 +567,10 @@ class MovieMaker(ToolInstance):
 
     def saveSession(self) -> dict:
         data = {}
+        data["normal_residues"] = self.frame.settings_menu.normal_residues
+        data["model_residues"] = self.frame.settings_menu.model_residues
+        data["model_special_residues"] = self.frame.settings_menu.model_special_residues
+        data["model_atoms"] = self.frame.settings_menu.model_atoms
         data["style_mode"] = self.frame.theme_toggle.isChecked()
         data["simple_mode"] = self.frame.simple_mode
         data["scene.nodes_id"] = self.frame.scene.nodes_id
@@ -604,6 +608,10 @@ class MovieMaker(ToolInstance):
         else:
             self.frame.mode_button.setProperty("State", "Simple")
         self.frame.ToggleMode(data["simple_mode"])
+        self.frame.settings_menu.normal_residues = data["normal_residues"]
+        self.frame.settings_menu.model_residues = data["model_residues"]
+        self.frame.settings_menu.model_special_residues = data["model_special_residues"]
+        self.frame.settings_menu.model_atoms = data["model_atoms"]
         self.frame.scene.nodes_id = data["scene.nodes_id"]
         self.frame.centerOn(float(data["scene.x"]), float(data["scene.y"]))
         self.frame.view.zoom = data["view.zoom"]

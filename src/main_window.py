@@ -29,8 +29,7 @@ class NodeEditor(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.presets = Presets(self.session, self)
-        self.loaded_presets = self.presets.simple_prestes
+        self.settings_menu = SettingsMenu(self.session, self)
 
         self.simple_mode = True
 
@@ -88,7 +87,6 @@ class NodeEditor(QWidget):
         
         self.layoutG1 = QGridLayout()
         self.presets_box = QComboBox()
-        self.presets_box.addItems(self.loaded_presets.keys())
         self.presets_box.setFixedHeight(30)
         self.load_button = QPushButton("Load Preset")
         self.load_button.clicked.connect(self.loadPreset)
@@ -122,6 +120,7 @@ class NodeEditor(QWidget):
         self.settings_button = QPushButton("")
         self.settings_button.setProperty("State", "Closed")
         self.settings_button.setObjectName("settings_button")
+        self.settings_button.clicked.connect(self.settings_menu.openSettings)
         self.layoutG1.addWidget(self.presets_box, 0, 0, 1, 1)
         self.layoutG1.addWidget(self.load_button, 1, 0, 1, 1)
         self.layoutG1.addWidget(self.center_button, 0, 1, 1, 1)
@@ -144,8 +143,11 @@ class NodeEditor(QWidget):
 
         self.setLayout(self.editor_layout) 
 
-        self.settings_menu = SettingsMenu(self.session, self)
-        self.settings_button.clicked.connect(self.settings_menu.openSettings)
+        self.presets = Presets(self.session, self)
+        self.reload_presets()
+        self.presets_box.addItems(self.loaded_presets.keys())
+
+        self.settings_menu.raise_()
 
         self.changeStyle()
 
@@ -154,6 +156,13 @@ class NodeEditor(QWidget):
         self.model_thread = ModelJob(self.session, self)
         self.model_thread.start()
     
+    def reload_presets(self):
+        self.presets.prepare_presets()
+        if self.mode_button.property("State") == "Simple":
+            self.loaded_presets = self.presets.simple_prestes
+        elif self.mode_button.property("State") == "Expert":
+            self.loaded_presets = self.presets.expert_prestes
+
     def ToggleMode(self, simple_mode:bool|None=None):
         if self.mode_button.property("State") == "Simple":
             self.mode_button.setProperty("State", "Expert")

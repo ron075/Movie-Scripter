@@ -46,9 +46,6 @@ class SimpleNodeBase(QWidget):
 
     def runCommand(self):
         self.updateCommand()
-        print(self.start_script_string)
-        print(self.script_string)
-        print(self.end_script_string)
         if self.start_script_string != "":
             command = self.strip_html_tags(self.start_script_string)
             for cmd in command.splitlines():
@@ -56,7 +53,6 @@ class SimpleNodeBase(QWidget):
         if self.script_string != "":
             command = self.strip_html_tags(self.script_string)
             for cmd in command.splitlines():
-                print(command)
                 commands.run(self.session, self.strip_html_tags(cmd))
         if self.end_script_string != "":
             command = self.strip_html_tags(self.end_script_string)
