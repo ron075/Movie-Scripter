@@ -17,14 +17,18 @@ class Presets():
     def __init__(self, session, editor:NodeEditor):
         self.session = session
         self.editor = editor
+
+    def prepare_presets(self):
         self.simple_prestes = {"Rotation Preset - Atoms":self.simple_rotation_preset_atoms,
                                "Rotation Preset - Cartoons":self.simple_rotation_preset_cartoons,
-                               "Rotation Preset - Surfaces":self.simple_rotation_preset_surfaces,
-                               "Rotation Preset - Special Atoms":self.simple_rotation_preset_cartoons_special_atoms}
+                               "Rotation Preset - Surfaces":self.simple_rotation_preset_surfaces}
         self.expert_prestes = {"Rotation Preset - Atoms":self.rotation_preset_atoms,
                                "Rotation Preset - Cartoons":self.rotation_preset_cartoons,
-                               "Rotation Preset - Surfaces":self.rotation_preset_surfaces,
-                               "Rotation Preset - Special Atoms":self.rotation_preset_cartoons_special_atoms}
+                               "Rotation Preset - Surfaces":self.rotation_preset_surfaces}
+        
+        if self.editor.settings_menu.model_special_residues:
+            self.simple_prestes["Rotation Preset - Special Atoms"] = self.simple_rotation_preset_cartoons_special_atoms
+            self.expert_prestes["Rotation Preset - Special Atoms"] = self.rotation_preset_cartoons_special_atoms
         
     def simple_rotation_preset_atoms(self):
         posX = -300

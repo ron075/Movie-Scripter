@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import *
+from PyQt6.QtCore import QEvent
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import re
@@ -1250,7 +1251,6 @@ class QTreeViewSelector(QWidget):
     def updateGroup(self):
         if NodePickerType(self.selector_type) == NodePickerType.ColorPicker:
             for index in self.ModelPicked.selectionModel().selectedIndexes():
-                print(index.row())
                 self.ModelGroup.setText("\n".join(self.selected_color_groups[index.row()]))
 
     def AddGroup(self):
@@ -1692,7 +1692,6 @@ class QTreeViewSelector(QWidget):
                 self.node.node_output.edge.end_socket.node.content.updateTab(index)
 
     def checkSpecialResidue(self, residue:str) -> bool:
-        print(self.scene.parent.settings_menu.normal_residues)
         if residue in self.scene.parent.settings_menu.normal_residues:
             return False
         return True
@@ -1719,31 +1718,34 @@ class QTreeViewSelector(QWidget):
                             first_special_residue_item_in_chain:bool = True
                             chain_item = QStandardItem(f"{i}-{chain.chain_id}")
                             model_item.appendRow(chain_item)
-                            for residue in chain.residues:
-                                residue_text = str(residue).split(" ")
-                                if self.checkSpecialResidue(residue_text[-2]):
-                                    if first_special_residue_item:
-                                        special_residue_item = QStandardItem("Special Residue")
-                                        model.insertRow(0, special_residue_item)
-                                        first_special_residue_item = False
-                                    if first_special_residue_item_in_model:
-                                        special_residue_item_in_model = QStandardItem("Special Residue")
-                                        model_item.insertRow(0, special_residue_item_in_model)
-                                        first_special_residue_item_in_model = False
-                                    if first_special_residue_item_in_chain:
-                                        special_residue_item_in_chain = QStandardItem("Special Residue")
-                                        chain_item.insertRow(0, special_residue_item_in_chain)
-                                        first_special_residue_item_in_chain = False
-                                    special_residue_item.appendRow(QStandardItem(f"{residue_text[-2]} {obj.id[0]}.{i}:{residue_text[-1]}"))
-                                    special_residue_item_in_model.appendRow(QStandardItem(f"{residue_text[-2]} {i}:{residue_text[-1]}"))
-                                    special_residue_item_in_chain.appendRow(QStandardItem(f"{residue_text[-2]} {residue_text[-1]}"))
-                                residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
-                                residue_item = QStandardItem(residue_text)
-                                chain_item.appendRow(residue_item)
-                                for atom in residue.atoms:
-                                    atom_text = str(atom).split(" ")
-                                    atom_item = QStandardItem(atom_text[-1])
-                                    residue_item.appendRow(atom_item)
+                            if self.scene.parent.settings_menu.model_residues:
+                                for residue in chain.residues:
+                                    residue_text = str(residue).split(" ")
+                                    if self.scene.parent.settings_menu.model_special_residues:
+                                        if self.checkSpecialResidue(residue_text[-2]):
+                                            if first_special_residue_item:
+                                                special_residue_item = QStandardItem("Special Residue")
+                                                model.insertRow(0, special_residue_item)
+                                                first_special_residue_item = False
+                                            if first_special_residue_item_in_model:
+                                                special_residue_item_in_model = QStandardItem("Special Residue")
+                                                model_item.insertRow(0, special_residue_item_in_model)
+                                                first_special_residue_item_in_model = False
+                                            if first_special_residue_item_in_chain:
+                                                special_residue_item_in_chain = QStandardItem("Special Residue")
+                                                chain_item.insertRow(0, special_residue_item_in_chain)
+                                                first_special_residue_item_in_chain = False
+                                            special_residue_item.appendRow(QStandardItem(f"{residue_text[-2]} {obj.id[0]}.{i}:{residue_text[-1]}"))
+                                            special_residue_item_in_model.appendRow(QStandardItem(f"{residue_text[-2]} {i}:{residue_text[-1]}"))
+                                            special_residue_item_in_chain.appendRow(QStandardItem(f"{residue_text[-2]} {residue_text[-1]}"))
+                                    residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
+                                    residue_item = QStandardItem(residue_text)
+                                    chain_item.appendRow(residue_item)
+                                    if self.scene.parent.settings_menu.model_atoms:
+                                        for atom in residue.atoms:
+                                            atom_text = str(atom).split(" ")
+                                            atom_item = QStandardItem(atom_text[-1])
+                                            residue_item.appendRow(atom_item)
                             i += 1
             elif type(obj) == volume.Volume:
                 volume_item = QStandardItem(f"Volume #{obj.id[0]}")
@@ -1776,24 +1778,45 @@ class QTreeViewSelector(QWidget):
                         model_item = QStandardItem(f"Model #{int(obj.id[0])}")
                         model.appendRow(model_item)
             elif type(obj) == models.Model:
+                first_special_residue_item_in_model:bool = True
                 model_item = QStandardItem(f"Model #{obj.id[0]}")
                 model.appendRow(model_item)
                 i = 1
                 for struct in obj.child_models():
                     if type(struct) == structure.AtomicStructure:
                         for chain in struct.chains:
+                            first_special_residue_item_in_chain:bool = True
                             chain_item = QStandardItem(f"{i}-{chain.chain_id}")
-                            i += 1
                             model_item.appendRow(chain_item)
-                            for residue in chain.residues:
-                                residue_text = str(residue).split(" ")
-                                residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
-                                residue_item = QStandardItem(residue_text)
-                                chain_item.appendRow(residue_item)
-                                for atom in residue.atoms:
-                                    atom_text = str(atom).split(" ")
-                                    atom_item = QStandardItem(atom_text[-1])
-                                    residue_item.appendRow(atom_item)
+                            if self.scene.parent.settings_menu.model_residues:
+                                for residue in chain.residues:
+                                    residue_text = str(residue).split(" ")
+                                    if self.scene.parent.settings_menu.model_special_residues:
+                                        if self.checkSpecialResidue(residue_text[-2]):
+                                            if first_special_residue_item:
+                                                special_residue_item = QStandardItem("Special Residue")
+                                                model.insertRow(0, special_residue_item)
+                                                first_special_residue_item = False
+                                            if first_special_residue_item_in_model:
+                                                special_residue_item_in_model = QStandardItem("Special Residue")
+                                                model_item.insertRow(0, special_residue_item_in_model)
+                                                first_special_residue_item_in_model = False
+                                            if first_special_residue_item_in_chain:
+                                                special_residue_item_in_chain = QStandardItem("Special Residue")
+                                                chain_item.insertRow(0, special_residue_item_in_chain)
+                                                first_special_residue_item_in_chain = False
+                                            special_residue_item.appendRow(QStandardItem(f"{residue_text[-2]} {obj.id[0]}.{i}:{residue_text[-1]}"))
+                                            special_residue_item_in_model.appendRow(QStandardItem(f"{residue_text[-2]} {i}:{residue_text[-1]}"))
+                                            special_residue_item_in_chain.appendRow(QStandardItem(f"{residue_text[-2]} {residue_text[-1]}"))
+                                    residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
+                                    residue_item = QStandardItem(residue_text)
+                                    chain_item.appendRow(residue_item)
+                                    if self.scene.parent.settings_menu.model_atoms:
+                                        for atom in residue.atoms:
+                                            atom_text = str(atom).split(" ")
+                                            atom_item = QStandardItem(atom_text[-1])
+                                            residue_item.appendRow(atom_item)
+                            i += 1
             elif type(obj) == volume.Volume:
                 volume_item = QStandardItem(f"Volume #{obj.id[0]}")
                 model.appendRow(volume_item)
@@ -1950,6 +1973,7 @@ class QSwitchControl(QCheckBox):
         self.animation = QPropertyAnimation(self.__circle, b"pos")
         self.animation.setEasingCurve(self.animation_curve)
         self.animation.setDuration(self.animation_duration)
+        self.stateChanged.connect(self.updateState)
         
         if hasattr(self.editor, "theme_toggle"):
             if self.editor.theme_toggle.isChecked():
@@ -1986,4 +2010,6 @@ class QSwitchControl(QCheckBox):
 
     def mousePressEvent(self, event):
         self.setChecked(not self.isChecked())
+
+    def updateState(self, event):
         self.start_animation()
