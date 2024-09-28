@@ -1,5 +1,5 @@
 # Movie-Scripter
-A gui tool for ChimeraX, for script production
+A GUI tool for ChimeraX, for script production
 
 
 To install it you need to go into ChemiraX and write: "toolshed install "C:\Users\UserName \Desktop\A\MovieMaker-0.3-py3-none-any.whl" " (Change the path as needed to reach where you have put the file). After installing, you can open the tool by clicking on Tools->Movie->MovieMaker.
