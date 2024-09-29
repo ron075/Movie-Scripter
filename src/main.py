@@ -571,6 +571,7 @@ class MovieMaker(ToolInstance):
         data["model_residues"] = self.frame.settings_menu.model_residues
         data["model_special_residues"] = self.frame.settings_menu.model_special_residues
         data["model_atoms"] = self.frame.settings_menu.model_atoms
+        data["save_folder"] = self.frame.settings_menu.save_folder
         data["style_mode"] = self.frame.theme_toggle.isChecked()
         data["simple_mode"] = self.frame.simple_mode
         data["scene.nodes_id"] = self.frame.scene.nodes_id
@@ -612,6 +613,7 @@ class MovieMaker(ToolInstance):
         self.frame.settings_menu.model_residues = data["model_residues"]
         self.frame.settings_menu.model_special_residues = data["model_special_residues"]
         self.frame.settings_menu.model_atoms = data["model_atoms"]
+        self.frame.settings_menu.save_folder = data["save_folder"]
         self.frame.scene.nodes_id = data["scene.nodes_id"]
         self.frame.centerOn(float(data["scene.x"]), float(data["scene.y"]))
         self.frame.view.zoom = data["view.zoom"]

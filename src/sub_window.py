@@ -4,6 +4,7 @@ from PyQt6.QtGui import QCloseEvent, QMouseEvent
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
+import os
 from .custom_widgets import *
 
 from typing import TYPE_CHECKING
@@ -34,8 +35,11 @@ class SettingsMenu(QWidget):
         self.model_residues = True
         self.model_atoms = False
 
+        self.save_folder = ""
+
         self.update_normal_residues = False
         self.update_model = False
+        self.update_folder = False
 
         self.initUI()
 
@@ -80,46 +84,60 @@ class SettingsMenu(QWidget):
         self.residues_layout.addWidget(self.ResetNormalResidue, 6, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.residues_widget.setLayout(self.residues_layout)
+        self.residues_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 
 
         self.model_widget = QWidget()
 
         self.model_layout = QGridLayout()
-        self.lModelResidues = QLabel("Residues")
+        self.lModelResidues = QLabel("Residues")   
+        self.lModelResidues.setMinimumWidth(100)
         self.ModelResidues = QSwitchControl(self.parent_window, checked=self.model_residues)
-        self.lModelSpecialResidues = QLabel("Special Residues")
+        self.lModelSpecialResidues = QLabel("Special\nResidues")        
+        self.lModelSpecialResidues.setMinimumWidth(100)
         self.ModelSpecialResidues = QSwitchControl(self.parent_window, checked=self.model_special_residues)
         self.ModelResidues.stateChanged.connect(self.updateModelAtoms)
-        self.lModelAtoms = QLabel("Atoms")
+        self.lModelAtoms = QLabel("Atoms")   
+        self.lModelAtoms.setMinimumWidth(100)
         self.ModelAtoms = QSwitchControl(self.parent_window, checked=self.model_atoms)
-        self.model_layout.addWidget(self.lModelResidues, 0, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelResidues, 0, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelSpecialResidues, 1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelSpecialResidues, 1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelAtoms, 2, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelAtoms, 2, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelResidues, 0, 0, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelResidues, 0, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelSpecialResidues, 1, 0, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelSpecialResidues, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelAtoms, 2, 0, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelAtoms, 2, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.model_widget.setLayout(self.model_layout)
+        self.model_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
 
 
-        self.test_widget2 = QWidget()
+        self.folder_widget = QWidget()
 
-        self.test_layout2 = QGridLayout()
-        self.ltest2 = QLabel("Test2")
-        self.test_layout2.addWidget(self.ltest2, 0, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.folder_layout = QGridLayout()
+        self.SaveFolder = QPushButton("Save Destination")
+        self.SaveFolder.clicked.connect(self.pickSaveFolder)
+        self.lSaveFolder = QTextEdit()
+        self.lSaveFolder.setText("No Folder")
+        self.lSaveFolder.setFixedWidth(150)
+        self.lSaveFolder.setFixedHeight(75)
+        self.lSaveFolder.setReadOnly(True)
+        self.folder_layout.addWidget(self.SaveFolder, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.folder_layout.addWidget(self.lSaveFolder, 1, 0, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.test_widget2.setLayout(self.test_layout2)
-
+        self.folder_widget.setLayout(self.folder_layout)
+        self.folder_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
 
 
         self.settings_widgets["Residues"] = self.residues_widget
         self.settings_widgets["Model"] = self.model_widget
-        self.settings_widgets["Test2"] = self.test_widget2
+        self.settings_widgets["Folder"] = self.folder_widget
 
         for widget in self.settings_widgets.values():
             self.settings_scroll.setWidget(widget)
+            self.settings_scroll.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
             self.settings_scroll.takeWidget()
             widget.setObjectName("settings")
 
@@ -171,6 +189,11 @@ class SettingsMenu(QWidget):
             self.ModelSpecialResidues.setChecked(self.model_special_residues)
             self.ModelResidues.setChecked(self.model_residues)
             self.ModelAtoms.setChecked(self.model_atoms)
+            if os.path.exists(self.save_folder):
+                self.lSaveFolder.setText(self.save_folder)
+            else:
+                self.save_folder = ""
+                self.lSaveFolder.setText("No Folder")
 
             self.parent_window.settings_button.setProperty("State", "Opened")
 
@@ -226,13 +249,33 @@ class SettingsMenu(QWidget):
             self.ModelSpecialResidues.setChecked(False)
             self.ModelAtoms.setEnabled(False)
             self.ModelAtoms.setChecked(False)
+
+    def pickSaveFolder(self):
+        save_folder = str(QFileDialog.getExistingDirectory(self, "Select Save Folder"))
+        if self.save_folder != save_folder:
+            if save_folder is not None:
+                if save_folder == "":
+                    self.lSaveFolder.setText("No Folder")
+                else:
+                    self.lSaveFolder.setText(save_folder)
+            else:
+                self.lSaveFolder.setText("No Folder")
+            self.update_folder = True
             
 
     def applySettings(self, cancel:bool=False):
         self.update_model = (self.model_special_residues != self.ModelSpecialResidues.isChecked() or self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked())
+
         if cancel:
             self.settings_residue_list = list(self.normal_residues)
-        elif self.update_normal_residues or self.update_model:
+            self.parent_window.settings_button.setProperty("State", "Closed")
+            self.hide()
+            return
+        
+        updates = False
+
+        if self.update_normal_residues or self.update_model:
+            updates = True
             if self.update_normal_residues:
                 self.normal_residues = list(self.settings_residue_list)
                 self.update_normal_residues = False
@@ -244,8 +287,14 @@ class SettingsMenu(QWidget):
                 self.update_model = False
             for picker in self.parent_window.pickers:
                 picker.updateModels(self.parent_window.current_models)
-        else:
+        if self.update_folder:
+            updates = True
+            self.save_folder = self.lSaveFolder.toPlainText()
+            self.update_folder = False
+
+        if not updates:
             self.settings_residue_list = list(self.normal_residues)
+
         self.parent_window.settings_button.setProperty("State", "Closed")
         self.hide()
 

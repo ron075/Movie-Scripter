@@ -145,7 +145,6 @@ class NodeEditor(QWidget):
 
         self.presets = Presets(self.session, self)
         self.reload_presets()
-        self.presets_box.addItems(self.loaded_presets.keys())
 
         self.settings_menu.raise_()
 
@@ -162,6 +161,8 @@ class NodeEditor(QWidget):
             self.loaded_presets = self.presets.simple_prestes
         elif self.mode_button.property("State") == "Expert":
             self.loaded_presets = self.presets.expert_prestes
+        self.presets_box.clear()
+        self.presets_box.addItems(self.loaded_presets.keys())
 
     def ToggleMode(self, simple_mode:bool|None=None):
         if self.mode_button.property("State") == "Simple":
@@ -390,8 +391,16 @@ class NodeEditor(QWidget):
             self.loaded_presets[self.presets_box.currentText()]()
 
     def saveScript(self):
-        path, filter = QFileDialog.getSaveFileName(self, "Save ChimerX Script", "", "Script (*.cxc)")
+        if self.settings_menu.save_folder != "":
+            if not os.path.exists(self.settings_menu.save_folder):
+                self.settings_menu.save_folder = ""
+        path, filter = QFileDialog.getSaveFileName(self, "Save ChimerX Script", self.settings_menu.save_folder, "Script (*.cxc)")
         if path:
+            folder = path.rsplit('/', 1)[0]
+            print(folder)
+            if folder != "":
+                self.settings_menu.save_folder = path.rsplit('/', 1)[0]
+                self.settings_menu.lSaveFolder.setText(folder)
             try:
                 with open(path, 'w') as f:
                     f.write(self.movie_script.toPlainText())
