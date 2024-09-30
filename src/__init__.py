@@ -33,13 +33,13 @@ class _MyAPI(BundleAPI):
     @staticmethod
     def get_class(class_name):
         # class_name will be a string
-        from . import main, main_window, node_base, sockets, edges, enum_classes
+        from . import main, main_window, node, sockets, edges, enum_classes
         if class_name == "MovieMaker":
             return main.MovieMaker
         elif class_name == "NodeEditor":
             return main_window.NodeEditor
         elif class_name == "Node":
-            return node_base.Node
+            return node.Node
         elif class_name == "Socket":
             return sockets.Socket
         elif class_name == "Edge":

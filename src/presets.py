@@ -5,7 +5,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtGui import *
 from sys import platform 
-from .node_base import *    
+from .node import *    
 from .edges import *    
 
 from typing import TYPE_CHECKING

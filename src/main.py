@@ -4,7 +4,7 @@ import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from .enum_classes import *
-from .node_base import *
+from .node import *
 from chimerax.core.commands import run
 from chimerax.core.tools import ToolInstance
 
@@ -567,11 +567,16 @@ class MovieMaker(ToolInstance):
 
     def saveSession(self) -> dict:
         data = {}
-        data["normal_residues"] = self.frame.settings_menu.normal_residues
-        data["model_residues"] = self.frame.settings_menu.model_residues
-        data["model_special_residues"] = self.frame.settings_menu.model_special_residues
-        data["model_atoms"] = self.frame.settings_menu.model_atoms
-        data["save_folder"] = self.frame.settings_menu.save_folder
+        data["settings.normal_residues"] = self.frame.settings_menu.normal_residues
+        data["settings.model_residues"] = self.frame.settings_menu.model_residues
+        data["settings.model_special_residues"] = self.frame.settings_menu.model_special_residues
+        data["settings.model_atoms"] = self.frame.settings_menu.model_atoms
+        data["settings.save_script_folder"] = self.frame.settings_menu.save_script_folder
+        data["settings.save_log_folder"] = self.frame.settings_menu.save_log_folder
+        data["settings.nodes_transparency_title"] = self.frame.settings_menu.nodes_transparency_title
+        data["settings.nodes_transparency_background"] = self.frame.settings_menu.nodes_transparency_background
+        data["settings.command_delay"] = self.frame.settings_menu.command_delay
+
         data["style_mode"] = self.frame.theme_toggle.isChecked()
         data["simple_mode"] = self.frame.simple_mode
         data["scene.nodes_id"] = self.frame.scene.nodes_id
@@ -603,17 +608,20 @@ class MovieMaker(ToolInstance):
         return data
 
     def loadSession(self, data):
+        self.frame.settings_menu.normal_residues = data["settings.normal_residues"]
+        self.frame.settings_menu.model_residues = data["settings.model_residues"]
+        self.frame.settings_menu.model_special_residues = data["settings.model_special_residues"]
+        self.frame.settings_menu.model_atoms = data["settings.model_atoms"]
+        self.frame.settings_menu.save_script_folder = data["settings.save_script_folder"]
+        self.frame.settings_menu.save_log_folder = data["settings.save_log_folder"]
+        self.frame.settings_menu.nodes_transparency_title = int(data["settings.nodes_transparency_title"])
+        self.frame.settings_menu.nodes_transparency_background = int(data["settings.nodes_transparency_background"])
+        self.frame.settings_menu.command_delay = float(data["settings.command_delay"])
+
         self.frame.theme_toggle.setChecked(data["style_mode"])
-        if data["simple_mode"]:
-            self.frame.mode_button.setProperty("State", "Expert")
-        else:
-            self.frame.mode_button.setProperty("State", "Simple")
-        self.frame.ToggleMode(data["simple_mode"])
-        self.frame.settings_menu.normal_residues = data["normal_residues"]
-        self.frame.settings_menu.model_residues = data["model_residues"]
-        self.frame.settings_menu.model_special_residues = data["model_special_residues"]
-        self.frame.settings_menu.model_atoms = data["model_atoms"]
-        self.frame.settings_menu.save_folder = data["save_folder"]
+        self.frame.simple_mode = not data["simple_mode"]
+        self.frame.ToggleMode()
+
         self.frame.scene.nodes_id = data["scene.nodes_id"]
         self.frame.centerOn(float(data["scene.x"]), float(data["scene.y"]))
         self.frame.view.zoom = data["view.zoom"]
