@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .graphics_scene import Scene
-    from .node_base import Node
+    from .node import Node
     from .main_window import NodeEditor
 
 class QColorMap(QWidget):
@@ -88,7 +88,7 @@ class QColorMap(QWidget):
             color_list.append(QColor(self.interpolate(self.colorRangeLibrary[rangeKey][1][interval], self.colorRangeLibrary[rangeKey][1][interval + 1], percentage)))
         return color_list
     
-    def interpolate(self, start:QColor, end:QColor, ratio):
+    def interpolate(self, start:QColor, end:QColor, ratio) -> str:
         r = (int)(ratio * start.red() + (1 - ratio) * end.red())
         g = (int)(ratio * start.green() + (1 - ratio) * end.green())
         b = (int)(ratio * start.blue() + (1 - ratio) * end.blue())
@@ -119,6 +119,7 @@ class QNumEdit(QWidget):
         self.widget_layout.setSpacing(4)
 
         self.Label = QLabel(self.label)
+        self.Label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         if self.addSlider:
             self.Slider = QSlider(orientation=Qt.Orientation.Horizontal if self.horizontal else Qt.Orientation.Vertical)
             if self.min is not None:

@@ -9,7 +9,7 @@ from .enum_classes import *
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .node_base import Node
+    from .node import Node
     from .stylesheets import Stylesheet
 
 class Socket():

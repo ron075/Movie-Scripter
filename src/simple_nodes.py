@@ -7,95 +7,19 @@ from PyQt6.QtGui import *
 from sys import platform
 from .custom_widgets import *    
 from .enum_classes import * 
+from .node_base import * 
 from chimerax.core import commands
 from chimerax.atomic import structure, all_structures, ChainArg
-import re
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .node_base import Node
+    from .node import Node
     from .graphics_scene import Scene
                 
-class SimpleNodeBase(QWidget):
+class SimpleNodeStart(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(parent)
-        self.session = session
-        self.summary = summary
-
-        self.title = title
-        
-        self.start_script_string = f""
-        self.script_string = f""
-        self.end_script_string = f""
-        
-    def internal_updateRun(self):
-        self.updateRun(False)
-
-    def updateRun(self):
-        pass
-
-    def startRunCommand(self):
-        commands.run(self.session, f"movie reset")
-        self.runCommand()
-        
-    def updateCommand(self):
-        self.start_script_string = f""
-        self.script_string = f""
-        self.end_script_string = f""
-
-    def runCommand(self):
-        self.updateCommand()
-        if self.start_script_string != "":
-            command = self.strip_html_tags(self.start_script_string)
-            for cmd in command.splitlines():
-                commands.run(self.session, self.strip_html_tags(cmd))
-        if self.script_string != "":
-            command = self.strip_html_tags(self.script_string)
-            for cmd in command.splitlines():
-                commands.run(self.session, self.strip_html_tags(cmd))
-        if self.end_script_string != "":
-            command = self.strip_html_tags(self.end_script_string)
-            for cmd in command.splitlines():
-                commands.run(self.session, self.strip_html_tags(cmd))
-
-    def runCommandChain(self):
-        start_point = True
-        self.runCommandChainBackward(start_point)
-        self.runCommand()
-        self.runCommandChainForward(start_point)
-
-    def runCommandChainBackward(self, start_point:bool):
-        no_inputs = True
-        if self.summary.node.node_input is not None:
-            if self.summary.node.node_input.hasEdge():
-                no_inputs = False
-                self.summary.node.node_input.edge.start_socket.node.content.runCommandChainBackward(start_point = False)
-        if no_inputs:
-            self.startRunCommand()
-        else:
-            if not start_point:
-                self.runCommand()
-
-    def runCommandChainForward(self, start_point:bool):
-        if self.summary.node.node_output is not None:
-            if self.summary.node.node_output.hasEdge():
-                self.summary.node.node_output.edge.end_socket.node.content.runCommandChainForward(start_point = False)
-        if not start_point:
-            self.runCommand()
-
-    def deleteNode(self):
-        self.summary.node.scene.parent.view.removeNode(self.summary.node)
-        
-    def strip_html_tags(self, html:str) -> str:
-        html = html.replace("<br>", "\n")
-        html = html.replace("'", "")
-        clean = re.compile('<.*?>')
-        return re.sub(clean, '', html)
-    
-class SimpleNodeStart(SimpleNodeBase):
-    def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.initUI()
 
@@ -213,7 +137,7 @@ class SimpleNodeStart(SimpleNodeBase):
         self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
     
 
-class SimpleNodePicker(SimpleNodeBase):
+class SimpleNodePicker(NodeBase):
     def __init__(self, session, scene:Scene, summary:SimpleNodeSummary, all_views:bool, title:str="", selector_type:NodePickerType=NodePickerType.ModelPicker, parent=None):
 
         self.selector_type = selector_type
@@ -233,7 +157,7 @@ class SimpleNodePicker(SimpleNodeBase):
         elif self.selector_type == NodePickerType.SplitPicker:
             title = "Split Picker"
             
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.scene = scene
         self.all_views = all_views
@@ -257,9 +181,9 @@ class SimpleNodePicker(SimpleNodeBase):
     def updateTab(self, current_type:int):
         pass
     
-class SimpleNodeColorPalette(SimpleNodeBase):
+class SimpleNodeColorPalette(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", colormap_height:int=50, parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.colormap_height = colormap_height
         
@@ -319,7 +243,7 @@ class SimpleNodeColorPalette(SimpleNodeBase):
 
         self.layoutH5 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode)
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
@@ -445,9 +369,9 @@ class SimpleNodeColorPalette(SimpleNodeBase):
     def updateColorMap(self):
         self.ColorMap.updateColormap(self.CustomColor.currentText())
 
-class SimpleNodeTransparency(SimpleNodeBase):
+class SimpleNodeTransparency(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.initUI()
 
@@ -480,7 +404,7 @@ class SimpleNodeTransparency(SimpleNodeBase):
 
         self.layoutH2 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
@@ -551,9 +475,9 @@ class SimpleNodeTransparency(SimpleNodeBase):
         else:
             self.AtomsStyle.setEnabled(True)
 
-class SimpleNodeRotation(SimpleNodeBase):
+class SimpleNodeRotation(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.initUI()
 
@@ -579,7 +503,7 @@ class SimpleNodeRotation(SimpleNodeBase):
         
         self.layoutH2 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
@@ -636,9 +560,9 @@ class SimpleNodeRotation(SimpleNodeBase):
         
         return [self.start_script_string, self.script_string, self.end_script_string]    
 
-class SimpleNodeWait(SimpleNodeBase):
+class SimpleNodeWait(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.initUI()
 
@@ -654,7 +578,7 @@ class SimpleNodeWait(SimpleNodeBase):
 
         self.layoutH1 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
@@ -672,16 +596,6 @@ class SimpleNodeWait(SimpleNodeBase):
     def updateTab(self, current_type:int):
         pass
 
-    def updateComment(self) -> list[str]:
-        start_script_string_comment = f""
-        script_string_comment = f"<u><b>{self.summary.node.nodeType.name}: {self.summary.node.nodeID}</b></u><br>"
-        end_script_string_comment = f""
-
-        script_string_comment += f"Waits for {int(self.Frames.getText())} frames<br>"
-        script_string_comment += f"<br>"
-            
-        return [start_script_string_comment, script_string_comment, end_script_string_comment]
-
     def updateCommand(self) -> list[str]:
         super().updateCommand()
 
@@ -694,9 +608,9 @@ class SimpleNodeWait(SimpleNodeBase):
         
         return [self.start_script_string, self.script_string, self.end_script_string]    
 
-class SimpleNodeDelete(SimpleNodeBase):
+class SimpleNodeDelete(NodeBase):
     def __init__(self, session, scene:Scene, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.scene = scene
         self.current_type = 0
@@ -728,7 +642,7 @@ class SimpleNodeDelete(SimpleNodeBase):
 
         self.layoutH3 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
@@ -809,9 +723,9 @@ class SimpleNodeDelete(SimpleNodeBase):
         
         return [self.start_script_string, self.script_string, self.end_script_string]    
 
-class SimpleNodeSplit(SimpleNodeBase):
+class SimpleNodeSplit(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
                         
         self.current_index = -1
 
@@ -828,7 +742,7 @@ class SimpleNodeSplit(SimpleNodeBase):
 
         self.layoutH2 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
-        self.Delete.setFixedWidth(50)
+        self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
@@ -870,9 +784,9 @@ class SimpleNodeSplit(SimpleNodeBase):
 
         return [self.start_script_string, self.script_string, self.end_script_string]
 
-class SimpleNodeEnd(SimpleNodeBase):
+class SimpleNodeEnd(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
-        super().__init__(session, summary, title, parent)
+        super().__init__(session, summary, title, simple_node=True, parent=parent)
 
         self.initUI()
 

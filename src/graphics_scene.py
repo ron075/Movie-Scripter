@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from sys import platform
-from .node_base import *
+from .node import *
 from .sockets import *
 from .edges import *
 from .enum_classes import *
@@ -177,6 +177,8 @@ class QDMGraphicsScene(QGraphicsScene):
             action5 = menu.addAction("Delete")
             action6 = menu.addAction("Split")
 
+            menu.setFixedWidth(menu.width() + 5)
+
             selected_action = menu.exec(event.screenPos())
             pos = event.scenePos()
             if selected_action == action1:
@@ -215,6 +217,10 @@ class QDMGraphicsScene(QGraphicsScene):
             actionG13 = menu_general.addAction("Fly")
             actionS1 = menu_Special.addAction("Delete")
             actionS2 = menu_Special.addAction("Split")
+        
+            menu.setFixedWidth(menu.sizeHint().width())
+            menu_general.setFixedWidth(menu_general.sizeHint().width() + 10)
+            menu_Special.setFixedWidth(menu_Special.sizeHint().width() + 5)
 
             selected_action = menu.exec(event.screenPos())
             pos = event.scenePos()

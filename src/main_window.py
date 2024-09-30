@@ -7,7 +7,8 @@ from chimerax.core import objects, tasks
 from chimerax.std_commands.view import NamedViews
 import os
 import time
-from .node_base import *
+import queue
+from .node import *
 from .edges import *
 from .graphics_scene import *
 from .presets import *
@@ -30,6 +31,11 @@ class NodeEditor(QWidget):
 
     def initUI(self):
         self.settings_menu = SettingsMenu(self.session, self)
+
+        self.command_queue = queue.Queue()
+
+        self.log = f"<u><b>Commands Log:</u></b><br>"
+        self.log_count:int = 1
 
         self.simple_mode = True
 
@@ -77,13 +83,27 @@ class NodeEditor(QWidget):
         self.layoutS1 = QSplitter(self)
         self.view = QDMGraphicsView(self.scene.grScene, self)
         self.script = QTextDocument()
-        self.script_window = QTextEdit()
+        self.script_window_widget = QWidget(self)
+        self.layoutS1V1 = QVBoxLayout()
         self.script_window = QTextEdit()
         self.script_window.setDocument(self.script)
         self.script_window.setReadOnly(True)
         self.script_window.hide()
+        self.script_window.setMinimumWidth(200)
+        self.layoutS1V1H1 = QHBoxLayout()
+        self.save_log = QPushButton("Save")
+        self.save_log.hide()
+        self.save_log.clicked.connect(self.saveLog)
+        self.reset_log = QPushButton("Reset")
+        self.reset_log.hide()
+        self.reset_log.clicked.connect(self.resetLog)
+        self.layoutS1V1H1.addWidget(self.save_log)
+        self.layoutS1V1H1.addWidget(self.reset_log)
+        self.layoutS1V1.addWidget(self.script_window)
+        self.layoutS1V1.addLayout(self.layoutS1V1H1)
+        self.script_window_widget.setLayout(self.layoutS1V1)
         self.layoutS1.addWidget(self.view)
-        self.layoutS1.addWidget(self.script_window)
+        self.layoutS1.addWidget(self.script_window_widget)
         
         self.layoutG1 = QGridLayout()
         self.presets_box = QComboBox()
@@ -154,7 +174,31 @@ class NodeEditor(QWidget):
         self.script_thread.start()
         self.model_thread = ModelJob(self.session, self)
         self.model_thread.start()
+        self.command_thread = CommandJob(self.session, self)
+        self.command_thread.start()
     
+        
+    @pyqtSlot(str)
+    def runCommand(self, command):
+        commands.run(self.session, self.strip_html_tags(command))
+        if '#' in command:
+            cmd = []
+            for c in command.split(" "):
+                if c != "":
+                    if c[0] == "#":
+                        cmd.append(f"<a style='background-color:{c};'>{c}</a>")
+                    else:
+                        cmd.append(c)
+            command = " ".join(cmd)
+        self.log += f"<b>{self.log_count}.</b> {command}<br>"
+        self.log_count += 1
+        value = self.script_window.verticalScrollBar().value()
+        self.script_window.setHtml(self.log)
+        if self.script_window.verticalScrollBar().maximum() < value:
+            self.script_window.verticalScrollBar().setValue(self.script_window.verticalScrollBar().maximum())
+        else:
+            self.script_window.verticalScrollBar().setValue(value)
+
     def reload_presets(self):
         self.presets.prepare_presets()
         if self.mode_button.property("State") == "Simple":
@@ -164,7 +208,7 @@ class NodeEditor(QWidget):
         self.presets_box.clear()
         self.presets_box.addItems(self.loaded_presets.keys())
 
-    def ToggleMode(self, simple_mode:bool|None=None):
+    def ToggleMode(self):
         if self.mode_button.property("State") == "Simple":
             self.mode_button.setProperty("State", "Expert")
             self.mode_button.setText("Mode: Expert")
@@ -173,10 +217,10 @@ class NodeEditor(QWidget):
             self.mode_button.setProperty("State", "Simple")
             self.mode_button.setText("Mode: Simple")
             self.loaded_presets = self.presets.simple_prestes
-        if simple_mode is None:
-            self.simple_mode = not self.simple_mode
-        else:
-            self.simple_mode = simple_mode  
+        self.simple_mode = not self.simple_mode  
+        if self.viewer_button.property("State") == "Log":
+            self.save_log.hide()
+            self.reset_log.hide()
         self.viewer_button.setProperty("State", "Close")
         self.viewer_button.setEnabled(not self.simple_mode)
         self.presets_box.clear()
@@ -202,8 +246,20 @@ class NodeEditor(QWidget):
             self.script_window.show()
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Script":
+            self.viewer_button.setProperty("State", "Queue")
+            self.viewer_button.setText("Viewer: Queue")
+            self.updateViewerText()
+        elif self.viewer_button.property("State") == "Queue":
+            self.viewer_button.setProperty("State", "Log")
+            self.viewer_button.setText("Viewer: Log")
+            self.save_log.show()
+            self.reset_log.show()
+            self.updateViewerText()
+        elif self.viewer_button.property("State") == "Log":
             self.viewer_button.setProperty("State", "Comments")
             self.viewer_button.setText("Viewer: Comments")
+            self.save_log.hide()
+            self.reset_log.hide()
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Comments":
             self.viewer_button.setProperty("State", "Summary")
@@ -217,6 +273,30 @@ class NodeEditor(QWidget):
             self.viewer_button.setProperty("State", "None")
             self.viewer_button.setText("Viewer: None")
             self.script_window.hide()
+
+    def strip_html_tags(self, html:str) -> str:
+        html = html.replace("'", "")
+        clean = re.compile('<.*?>')
+        return re.sub(clean, '', html)
+    
+    def generateQueueSummary(self):
+        summary = f"<u><b>Command delay:</u></b> {self.settings_menu.command_delay}<br>"
+        summary += f"<u><b>Commands Queue:</u></b><br>"
+        i = 1
+        for cmd in self.command_queue.queue:
+            if cmd != "":
+                if '#' in cmd:
+                    new_cmd = []
+                    for c in cmd.split(" "):
+                        if c != "":
+                            if c[0] == "#":
+                                new_cmd.append(f"<a style='background-color:{c};'>{c}</a>")
+                            else:
+                                new_cmd.append(c)
+                    cmd = " ".join(new_cmd)
+                summary += f"<b>{i}.</b> {cmd}<br>"
+                i += 1
+        return summary
 
     def generateSummary(self):
         nlines = 0
@@ -322,6 +402,7 @@ class NodeEditor(QWidget):
         start_command = ""
         command = ""
         end_command = ""
+        queue_string = ""
         start_comment = ""
         comment = ""
         end_comment = ""
@@ -332,6 +413,7 @@ class NodeEditor(QWidget):
                 command += command_string[1]
                 end_command += command_string[2]
             if not self.simple_mode:
+                queue_string = self.generateQueueSummary()
                 comment_string = current_node.content.updateComment()
                 summary = self.generateSummary()
                 if comment_string != []:
@@ -339,6 +421,7 @@ class NodeEditor(QWidget):
                     comment += comment_string[1]
                     end_comment += comment_string[2]
             else:
+                queue_string = ""
                 comment_string = ""
                 summary = ""
             if current_node.node_output is None:
@@ -349,9 +432,32 @@ class NodeEditor(QWidget):
                 else:
                     current_node = current_node.node_output.edge.end_socket.node
         if do_record:
-            return [start_command + command + end_command, start_comment + comment + end_comment, summary]
+            return [start_command + command + end_command, queue_string, start_comment + comment + end_comment, summary]
         else:
-            return [command, comment, summary]
+            return [command, queue_string, comment, summary]
+        
+    def saveLog(self):
+        if self.settings_menu.save_log_folder != "":
+            if not os.path.exists(self.settings_menu.save_log_folder):
+                self.settings_menu.save_log_folder = ""
+        path, filter = QFileDialog.getSaveFileName(self, "Save command log", self.settings_menu.save_log_folder, "text (*.txt)")
+        if path:
+            folder = path.rsplit('/', 1)[0]
+            if folder != "":
+                self.settings_menu.save_log_folder = path.rsplit('/', 1)[0]
+                self.settings_menu.lSaveLogFolder.setText(folder)
+            try:
+                log_document = QTextDocument()
+                log_document.setHtml(self.log)
+                with open(path, 'w') as f:
+                    f.write(log_document.toPlainText())
+            except Exception as e:
+                pass
+
+    def resetLog(self):
+        self.log = f"<u><b>Commands Log:</u></b><br>"
+        self.log_count:int = 1
+        self.script_window.setHtml(self.log)
         
     def convertTime(self, value:int|float) -> str:
         if value < 60:
@@ -378,12 +484,21 @@ class NodeEditor(QWidget):
                 text = None
             elif self.viewer_button.property("State") == "Script":
                 text = self.viewer_texts[0]
-            elif self.viewer_button.property("State") == "Comments":
+            elif self.viewer_button.property("State") == "Queue":
                 text = self.viewer_texts[1]
-            elif self.viewer_button.property("State") == "Summary":
+            elif self.viewer_button.property("State") == "Log":
+                text = self.log
+            elif self.viewer_button.property("State") == "Comments":
                 text = self.viewer_texts[2]
+            elif self.viewer_button.property("State") == "Summary":
+                text = self.viewer_texts[3]
             if text is not None:
+                value = self.script_window.verticalScrollBar().value()
                 self.script_window.setHtml(text)
+                if self.script_window.verticalScrollBar().maximum() < value:
+                    self.script_window.verticalScrollBar().setValue(self.script_window.verticalScrollBar().maximum())
+                else:
+                    self.script_window.verticalScrollBar().setValue(value)
             
     def loadPreset(self):
         self.reset(preset=True)
@@ -391,16 +506,15 @@ class NodeEditor(QWidget):
             self.loaded_presets[self.presets_box.currentText()]()
 
     def saveScript(self):
-        if self.settings_menu.save_folder != "":
-            if not os.path.exists(self.settings_menu.save_folder):
-                self.settings_menu.save_folder = ""
-        path, filter = QFileDialog.getSaveFileName(self, "Save ChimerX Script", self.settings_menu.save_folder, "Script (*.cxc)")
+        if self.settings_menu.save_script_folder != "":
+            if not os.path.exists(self.settings_menu.save_script_folder):
+                self.settings_menu.save_script_folder = ""
+        path, filter = QFileDialog.getSaveFileName(self, "Save ChimerX Script", self.settings_menu.save_script_folder, "Script (*.cxc)")
         if path:
             folder = path.rsplit('/', 1)[0]
-            print(folder)
             if folder != "":
-                self.settings_menu.save_folder = path.rsplit('/', 1)[0]
-                self.settings_menu.lSaveFolder.setText(folder)
+                self.settings_menu.save_script_folder = path.rsplit('/', 1)[0]
+                self.settings_menu.lSaveScriptFolder.setText(folder)
             try:
                 with open(path, 'w') as f:
                     f.write(self.movie_script.toPlainText())
@@ -410,7 +524,7 @@ class NodeEditor(QWidget):
     def runScript(self):
         command = self.movie_script.toPlainText().replace("'", "")
         for cmd in command.splitlines():
-            commands.run(self.session, cmd)
+            self.command_queue.put(cmd)
 
     def checkModels(self) -> list:
         return objects.AllObjects(self.session).models
@@ -485,9 +599,12 @@ class NodeEditor(QWidget):
                     break
 
     def reset(self, preset:bool=False):  
+        with self.command_queue.mutex:
+            self.command_queue.queue.clear()
         self.scene.nodes = []
         self.scene.nodes_id = []
         self.scene.edges = []
+
         if not preset:
             self.view.zoom = 10
             zoomFactor = 1 / self.view.total_scale
@@ -510,7 +627,6 @@ class NodeEditor(QWidget):
         self.copy_selected_label3D_objects = None
 
         self.pickers:list[QTreeViewSelector] = []
-
 
         self.scene.grScene.clear()
         
@@ -537,7 +653,7 @@ class ScriptViewerUpdater(QObject):
     def __init__(self, session, editor:NodeEditor, parent=None):
         super().__init__(parent)
         self.editor = editor
-        self.current_script = ""
+        self.current_script = []
         self.send_command.connect(self.editor.updateViewerText)
 
     def run(self):
@@ -591,4 +707,32 @@ class ModelUpdater(QObject):
                 models_list = [self.objs_models, self.views]
                 self.send_command.emit(models_list)
             time.sleep(1)
+        return
+
+class CommandJob(tasks.Job):
+    def __init__(self, session, editor:NodeEditor, parent=None):
+        super().__init__(session)
+
+        self.updater = CommandSender(session, editor)
+
+    def run(self):
+        self.updater.run()
+        return
+        
+class CommandSender(QObject):
+    send_command = pyqtSignal(str)
+    def __init__(self, session, editor:NodeEditor, parent=None):
+        super().__init__(parent)
+        self.editor = editor
+        self.send_command.connect(self.editor.runCommand)
+
+    def run(self):
+        while ToolStatus(self.editor.tool_status) == ToolStatus.RUNNING:
+            if self.editor.command_queue.qsize() > 0:
+                cmd = self.editor.command_queue.get()
+                if cmd != "":
+                    self.send_command.emit(cmd)
+                time.sleep(self.editor.settings_menu.command_delay)
+            else:
+                time.sleep(1)
         return
