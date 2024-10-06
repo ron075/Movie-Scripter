@@ -26,9 +26,9 @@ class Presets():
                                "Rotation Preset - Cartoons":self.rotation_preset_cartoons,
                                "Rotation Preset - Surfaces":self.rotation_preset_surfaces}
         
-        if self.editor.settings_menu.model_special_residues:
-            self.simple_prestes["Rotation Preset - Special Atoms"] = self.simple_rotation_preset_cartoons_special_atoms
-            self.expert_prestes["Rotation Preset - Special Atoms"] = self.rotation_preset_cartoons_special_atoms
+        if self.editor.settings_menu.ModelHetero:
+            self.simple_prestes["Rotation Preset - Hetero"] = self.simple_rotation_preset_cartoons_hetero
+            self.expert_prestes["Rotation Preset - Hetero"] = self.rotation_preset_cartoons_hetero
         
     def simple_rotation_preset_atoms(self):
         posX = -300
@@ -45,12 +45,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -90,12 +90,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -174,12 +174,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -219,12 +219,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -303,12 +303,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -348,12 +348,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -417,7 +417,7 @@ class Presets():
         self.editor.centerOn(corners[0], corners[1], corners[2], corners[3])
         self.editor.scaleOn(corners[0], corners[1], corners[2], corners[3])
 
-    def simple_rotation_preset_cartoons_special_atoms(self):
+    def simple_rotation_preset_cartoons_hetero(self):
         posX = -300
         posY = -100
         self.editor.nodeStart.setPos(posX, posY)
@@ -432,12 +432,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -460,12 +460,12 @@ class Presets():
         node.setPos(posX, posY)
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() == "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() == "Hetero":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
         node.input_color.content.Molecule.select()
@@ -497,12 +497,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -532,13 +532,13 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
-                                    if model.index(0, 0, model.index(j, 0, model.index(i, 0))).data() == "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
+                                    if model.index(0, 0, model.index(j, 0, model.index(i, 0))).data() == "Hetero":
                                         node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(0, 0, model.index(j, 0, model.index(i, 0))), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                     if count >= index + 1:
@@ -610,12 +610,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -663,12 +663,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -755,12 +755,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -808,12 +808,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -900,12 +900,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -953,12 +953,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -1031,7 +1031,7 @@ class Presets():
         self.editor.scaleOn(corners[0], corners[1], corners[2], corners[3])
 
         
-    def rotation_preset_cartoons_special_atoms(self):
+    def rotation_preset_cartoons_hetero(self):
         posX = -300
         posY = -300
         self.editor.nodeStart.setPos(posX, posY)
@@ -1046,12 +1046,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -1075,12 +1075,12 @@ class Presets():
         selected_color_groups = []
         if node.input_color.content.Molecule.ModelTree.model().rowCount() > 1:
             for i in range(node.input_color.content.Molecule.ModelTree.model().rowCount()):
-                if  node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                    model:QStandardItemModel = node.input_color.content.Molecule.ModelTree.model()
-                    item = model.item(i, 0)
+                if node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_color.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                    model:QSortFilterProxyModel = node.input_color.content.Molecule.ModelTree.model()
+                    item:QStandardItem = model.sourceModel().item(i, 0)
                     if item.rowCount() > 0:
                         for j in range(item.rowCount()):
-                            if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                            if model.index(j, 0, model.index(i, 0)).data() == "Hetero":
                                 node.input_color.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                 node.input_color.content.Molecule.AddGroup()
                     else:            
@@ -1127,12 +1127,12 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
                                     node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(j, 0, model.index(i, 0)), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                 if count >= index + 1:
@@ -1162,13 +1162,13 @@ class Presets():
             count = 0
             if node.input_model.content.Molecule.ModelTree.model().rowCount() > 1:
                 for i in range(node.input_model.content.Molecule.ModelTree.model().rowCount()):
-                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Special Residue":
-                        model:QStandardItemModel = node.input_model.content.Molecule.ModelTree.model()
-                        item = model.item(i, 0)
+                    if node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "All" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Hetero" and node.input_model.content.Molecule.ModelTree.model().index(i, 0).data() != "Water":
+                        model:QSortFilterProxyModel = node.input_model.content.Molecule.ModelTree.model()
+                        item:QStandardItem = model.sourceModel().item(i, 0)
                         if item.rowCount() > 0:
                             for j in range(item.rowCount()):
-                                if model.index(j, 0, model.index(i, 0)).data() != "Special Residue":
-                                    if model.index(0, 0, model.index(j, 0, model.index(i, 0))).data() == "Special Residue":
+                                if model.index(j, 0, model.index(i, 0)).data() != "Hetero" and model.index(j, 0, model.index(i, 0)).data() != "Water":
+                                    if model.index(0, 0, model.index(j, 0, model.index(i, 0))).data() == "Hetero":
                                         node.input_model.content.Molecule.ModelTree.selectionModel().select(model.index(0, 0, model.index(j, 0, model.index(i, 0))), QItemSelectionModel.SelectionFlag.Select)
                                     count += 1
                                     if count >= index + 1:

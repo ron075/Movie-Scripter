@@ -213,10 +213,11 @@ class QDMGraphicsScene(QGraphicsScene):
             actionG9 = menu_general.addAction("Center of Mass")
             actionG10 = menu_general.addAction("Wait")
             actionG11 = menu_general.addAction("Crossfade")
-            actionG12 = menu_general.addAction("View")
+            actionG12 = menu_general.addAction("Load View")
             actionG13 = menu_general.addAction("Fly")
             actionS1 = menu_Special.addAction("Delete")
             actionS2 = menu_Special.addAction("Split")
+            actionS3 = menu_Special.addAction("Save View")
         
             menu.setFixedWidth(menu.sizeHint().width())
             menu_general.setFixedWidth(menu_general.sizeHint().width() + 10)
@@ -247,13 +248,15 @@ class QDMGraphicsScene(QGraphicsScene):
             elif selected_action == actionG11:
                 self.AddNodeCrossfade(pos.x(), pos.y())
             elif selected_action == actionG12:
-                self.AddNodeView(pos.x(), pos.y())
+                self.AddNodeLoadView(pos.x(), pos.y())
             elif selected_action == actionG13:
                 self.AddNodeFly(pos.x(), pos.y())
             elif selected_action == actionS1:
                 self.AddNodeDelete(pos.x(), pos.y())
             elif selected_action == actionS2:
                 self.AddNodeSplit(pos.x(), pos.y())
+            elif selected_action == actionS3:
+                self.AddNodeSaveView(pos.x(), pos.y())
         menu.deleteLater()
 
     def AddNodeColorPalette(self, x:float, y:float):
@@ -282,8 +285,10 @@ class QDMGraphicsScene(QGraphicsScene):
         node = Node(self.session, self.scene, NodeType.Wait, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeCrossfade(self, x:float, y:float):
         node = Node(self.session, self.scene, NodeType.Crossfade, parent=self.scene.parent, pos_x=x, pos_y=y)
-    def AddNodeView(self, x:float, y:float):
-        node = Node(self.session, self.scene, NodeType.View, view_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
+    def AddNodeSaveView(self, x:float, y:float):
+        node = Node(self.session, self.scene, NodeType.View_Save, has_input=False, has_output=False, parent=self.scene.parent, pos_x=x, pos_y=y)
+    def AddNodeLoadView(self, x:float, y:float):
+        node = Node(self.session, self.scene, NodeType.View_Load, view_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeFly(self, x:float, y:float):
         node = Node(self.session, self.scene, NodeType.Fly, fly_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeSplit(self, x:float, y:float):

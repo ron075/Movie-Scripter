@@ -95,8 +95,9 @@ class SimpleNodeStart(NodeBase):
 
         if self.Record.isChecked():
             self.start_script_string += f"movie reset<br>"
-            self.start_script_string += f"movie record;<br>"
             self.start_script_string += f"<br>"
+            self.script_string += f"movie record;<br>"
+            self.script_string += f"<br>"
         else:
             self.start_script_string += f"movie reset<br>"
             self.start_script_string += f"<br>"
@@ -259,6 +260,7 @@ class SimpleNodeColorPalette(NodeBase):
 
         self.main_layout.addLayout(self.layoutH1)
         self.main_layout.addLayout(self.ColorMap.widget_layout)
+        self.main_layout.addSpacerItem(QSpacerItem(1,10))
         self.main_layout.addLayout(self.layoutH3)
         self.main_layout.addLayout(self.layoutH4)
         self.main_layout.addLayout(self.layoutH5)
@@ -291,7 +293,9 @@ class SimpleNodeColorPalette(NodeBase):
 
                 objects = "".join(group)
                 if objects == "All":
-                    objects = objects.lower()
+                    objects = f"<i>'{objects.lower()}'</i>"
+                else:
+                    objects = f"<i>'{objects}'</i>"
 
                 self.script_string += f"color {objects} {color}<br>"
             self.script_string += f"<br>"
@@ -443,7 +447,9 @@ class SimpleNodeTransparency(NodeBase):
         if self.Run.isEnabled():
             objects = "".join(self.summary.picker_model)
             if objects == "All":
-                objects = objects.lower()
+                objects = f"<i>'{objects.lower()}'</i>"
+            else:
+                objects = f"<i>'{objects}'</i>"
 
             if int(self.Surfaces.getText()) >= 100 and int(self.Cartoons.getText()) >= 100 and int(self.Atoms.getText()) >= 100:
                 self.script_string += f"hide <i>'{objects}'</i> target scabp<br>"
@@ -551,9 +557,9 @@ class SimpleNodeRotation(NodeBase):
 
             objects = "".join(self.summary.picker_model)
             if objects == "All":
-                objects = f""
+                objects = f"<i>'{objects.lower()}'</i>"
             else:
-                objects = f" atoms {objects.lower()}"
+                objects = f"<i>'{objects}'</i>"
 
             self.script_string += f"turn {self.Axis.currentText().lower()} {self.Angle.getText()} {self.Frames.getText()} {center}{objects}<br>"
             self.script_string += f"<br>"
@@ -648,13 +654,8 @@ class SimpleNodeDelete(NodeBase):
         self.Run.setFixedWidth(50)
         self.Run.setEnabled(False)
         self.Run.clicked.connect(self.startRunCommand)
-        self.RunChain = QPushButton("Run Chain")
-        self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
-        self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
-        self.layoutH3.addWidget(self.RunChain)
 
         self.main_layout.addLayout(self.layoutH1)
         self.main_layout.addLayout(self.layoutH2)
@@ -697,7 +698,9 @@ class SimpleNodeDelete(NodeBase):
         if self.Run.isEnabled():
             objects = "".join(self.summary.picker_delete)
             if objects == "All":
-                objects = objects.lower()
+                objects = f"<i>'{objects.lower()}'</i>"
+            else:
+                objects = f"<i>'{objects}'</i>"
 
             if self.current_type == 0:
                 if self.Type.currentText() == "All":
@@ -748,13 +751,8 @@ class SimpleNodeSplit(NodeBase):
         self.Run.setFixedWidth(50)
         self.Run.setEnabled(False)
         self.Run.clicked.connect(self.startRunCommand)
-        self.RunChain = QPushButton("Run Chain")
-        self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
-        self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
-        self.layoutH2.addWidget(self.RunChain)
 
         self.main_layout.addWidget(self.Model)
         self.main_layout.addLayout(self.layoutH2)
@@ -778,8 +776,12 @@ class SimpleNodeSplit(NodeBase):
         if self.Run.isEnabled():
             objects = "".join(self.summary.picker_model)
             if objects == "All":
-                objects = objects.lower()
+                objects = f"<i>'{objects.lower()}'</i>"
+            else:
+                objects = f"<i>'{objects}'</i>"
             self.script_string += f"split {objects} {self.Model.currentText().lower()}<br>"
+            if self.Model.currentText() == "Ligands":
+                self.script_string += f"split {objects} chains<br>"
             self.script_string += f"<br>"
 
         return [self.start_script_string, self.script_string, self.end_script_string]
@@ -961,21 +963,35 @@ class SimpleNodeSummary(QWidget):
 
     def updateModel(self):
         self.node.content.updateRun(chain_update=True)
+        self.updateRunChain()
 
     def updateColor(self):
         self.node.content.updateRun(chain_update=True)
+        self.updateRunChain()
 
     def updateCenter(self):
         self.node.content.updateRun(chain_update=True)
+        self.updateRunChain()
 
     def updateView(self):
         self.node.content.updateRun(chain_update=True)
+        self.updateRunChain()
 
     def updateFly(self):
         self.node.content.updateRun(chain_update=True)
+        self.updateRunChain()
 
     def updateDelete(self):
         self.node.content.updateRun(chain_update=True)
+
+    def updateRunChain(self):
+        no_output=True
+        if self.node.node_output is not None:
+            if self.node.node_output.hasEdge():
+                no_output=False
+                self.node.node_output.edge.end_socket.node.summary.updateOutputValues()
+        if no_output:
+            self.updateChainRun() 
 
     def updateOutputValues(self, update_frames:bool=True, check_update:bool=True):
         #pass frames, model, color, center, view, fly. check run when finished
@@ -1099,7 +1115,8 @@ class SimpleNodeSummary(QWidget):
         if self.node.node_input is not None:
             if self.node.node_input.hasEdge():
                 run_enabled = self.node.node_input.edge.start_socket.node.summary.updateChainRun(run_enabled)
-        self.node.content.RunChain.setEnabled(run_enabled)
+        if hasattr(self.node.content, "RunChain"):
+            self.node.content.RunChain.setEnabled(run_enabled)
         return run_enabled
     
     def resetOutputValues(self, reset_frames:bool=True):

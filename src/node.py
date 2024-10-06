@@ -10,6 +10,7 @@ from .node_base import *
 from .simple_nodes import *
 from .advanced_nodes import *
 from .enum_classes import *
+from .info import *
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -30,8 +31,11 @@ class Node():
             self.nodeID = node_id
         self.colormap_height = colormap_height
         self.nodePickerType = nodePickerType
+        
         self.removable = removable
         self.is_deleting = False
+        self.has_input = has_input
+        self.has_output = has_output
 
         self.index = index
         self.input_model:Node|None = None
@@ -52,7 +56,7 @@ class Node():
         if self.scene.parent.simple_mode:
             self.summary = SimpleNodeSummary(self.session, self, model_input, color_input, center_input, view_input, fly_input)
             if NodeType(self.nodeType) == NodeType.Start:
-                self.content = SimpleNodeStart(self.session, self.summary, "Start")
+                self.content = SimpleNodeStart(self.session, self.summary, "Record")
             elif NodeType(self.nodeType) == NodeType.Picker:
                 self.content = SimpleNodePicker(self.session, self.scene, self.summary, all_views=True, selector_type=self.nodePickerType)
             elif NodeType(self.nodeType) == NodeType.ColorPalette:
@@ -68,12 +72,12 @@ class Node():
             elif NodeType(self.nodeType) == NodeType.Split:
                 self.content = SimpleNodeSplit(self.session, self.summary, "Split")
             elif NodeType(self.nodeType) == NodeType.End:
-                self.content = SimpleNodeEnd(self.session, self.summary, "End")
+                self.content = SimpleNodeEnd(self.session, self.summary, "Finish")
         else:
             self.summary = AdvancedNodeSummary(self.session, self, model_input, color_input, center_input, view_input, fly_input)
 
             if NodeType(self.nodeType) == NodeType.Start:
-                self.content = AdvancedNodeStart(self.session, self.summary, "Start")
+                self.content = AdvancedNodeStart(self.session, self.summary, "Record")
             elif NodeType(self.nodeType) == NodeType.Picker:
                 self.content = AdvancedNodePicker(self.session, self.scene, self.summary, all_views=True, selector_type=self.nodePickerType)
             elif NodeType(self.nodeType) == NodeType.ColorPalette:
@@ -100,19 +104,21 @@ class Node():
                 self.content = AdvancedNodeWait(self.session, self.summary, "Wait")
             elif NodeType(self.nodeType) == NodeType.Crossfade:
                 self.content = AdvancedNodeCrossfade(self.session, self.summary, "Crossfade")
-            elif NodeType(self.nodeType) == NodeType.View:
-                self.content = AdvancedNodeView(self.session, self.summary, "View")
+            elif NodeType(self.nodeType) == NodeType.View_Save:
+                self.content = AdvancedNodeSaveView(self.session, self.summary, "Save View")
+            elif NodeType(self.nodeType) == NodeType.View_Load:
+                self.content = AdvancedNodeLoadView(self.session, self.summary, "Load View")
             elif NodeType(self.nodeType) == NodeType.Fly:
                 self.content = AdvancedNodeFly(self.session, self.summary, "Fly")
             elif NodeType(self.nodeType) == NodeType.Split:
                 self.content = AdvancedNodeSplit(self.session, self.summary, "Split")
             elif NodeType(self.nodeType) == NodeType.End:
-                self.content = AdvancedNodeEnd(self.session, self.summary, "End")
+                self.content = AdvancedNodeEnd(self.session, self.summary, "Finish")
         
         self.title:str = self.content.title
 
         self.inputs_counter = 0
-        if has_input or has_output or NodeType(self.nodeType) == NodeType.Picker:
+        if self.has_input or self.has_output or NodeType(self.nodeType) == NodeType.Picker:
             self.inputs_counter += 1
         if model_input:
             self.inputs_counter += 1
@@ -130,6 +136,9 @@ class Node():
         self.grNode = QDMGraphicsNode(self, self.inputs_counter)
         self.setPos(pos_x, pos_y)
 
+        self.help_strings = Info().set_info(self)
+        self.set_info(self.scene.parent.settings_menu.current_info_type)
+
         self.scene.addNode(self)
         self.scene.grScene.addItem(self.grNode)
 
@@ -144,9 +153,12 @@ class Node():
             self.input_model = Node(self.session, self.scene, NodeType.Picker, nodePickerType=NodePickerType.ModelPicker, removable=False, index=counter, has_input=False, has_output=False, parent=self.parent)
             self.picker_inputs.append(socket)
             self.input_model_edge = Edge(self.scene, self.input_model.node_output, self.picker_inputs[counter], removable=False)
-            if not self.scene.parent.simple_mode:
-                self.input_model.grNode.hide()
-                self.input_model_edge.grEdge.hide()
+            if NodeType(self.nodeType) != NodeType.Split:
+                if not self.scene.parent.simple_mode:
+                    self.input_model.grNode.hide()
+                    self.input_model_edge.grEdge.hide()
+                else:
+                    self.input_model.setSelfPos(self.pos.x(), self.pos.y(), self.inputs_counter)
             else:
                 self.input_model.setSelfPos(self.pos.x(), self.pos.y(), self.inputs_counter)
             counter += 1
@@ -200,7 +212,7 @@ class Node():
             self.picker_inputs.append(socket)
             self.input_delete_edge = Edge(self.scene, self.input_delete.node_output, self.picker_inputs[counter], removable=False)
             counter += 1
-        if has_input:
+        if self.has_input:
             socket = Socket(node=self, index=counter, position=Position.LEFT_TOP, socket_type=SocketType.INPUT_SOCKET)
             counter += 1
             self.node_input = (socket)
@@ -231,7 +243,7 @@ class Node():
                 socket = Socket(node=self, index=counter, position=Position.RIGHT_TOP, socket_type=SocketType.DELETE_SOCKET)
                 counter += 1
                 self.node_output = socket
-        elif has_output:
+        elif self.has_output:
             socket = Socket(node=self, index=counter, position=Position.RIGHT_TOP, socket_type=SocketType.OUTPUT_SOCKET)
             counter += 1
             self.node_output = socket
@@ -243,9 +255,14 @@ class Node():
                 else:
                     self.changeStyle(Stylesheet.DARK)
                     
+    def set_info(self, info_strings_format:int):
+        self.grNode.info.setToolTip(self.help_strings[info_strings_format])
+
     def changeStyle(self, style:Stylesheet):
+        self.grNode.info.setStyleSheet(self.scene.parent.stylesheets[style.name])
         self.summary.setStyleSheet(self.scene.parent.stylesheets[style.name])
         self.content.setStyleSheet(self.scene.parent.stylesheets[style.name])
+        self.grNode._title_color = self.scene.parent.styles._title_color[style.value]
         self.grNode._title_color = self.scene.parent.styles._title_color[style.value]
         self.grNode.title_item.setDefaultTextColor(self.grNode._title_color)
         self.grNode._brush_title_color = QColor(self.scene.parent.styles._node_brush_title[style.value])
@@ -300,6 +317,8 @@ class QDMGraphicsNode(QGraphicsItem):
         super().__init__(parent)        
         self.node = node   
         self.socket_count = socket_count
+        self.info = QPushButton("")
+        self.info.setObjectName("info")
         self.content = self.node.content
         self.summary = self.node.summary
 
@@ -369,9 +388,9 @@ class QDMGraphicsNode(QGraphicsItem):
 
     def boundingRect(self):
         if self.isSelected():
-            return QRectF(0, 0, (self.node_width if self.node_width > 0 else self.width), (self.node_height + self.title_height if self.node_height > 0 else self.height)).normalized()        
+            return QRectF(0, 0, self.checkWidth(), self.checkHeight()).normalized()        
         else:
-            return QRectF(0, 0, (self.node_width if self.node_width > 0 else self.width), (self.node_height + self.title_height + self.node.socket_spacing * (self.node.inputs_counter - 1) if self.node_height > 0 else self.height)).normalized()
+            return QRectF(0, 0, self.checkWidth(), self.checkHeight(self.node.socket_spacing * (self.node.inputs_counter - 1))).normalized()
 
     def updateBrushesAlpha(self):
         self._brush_title_color.setAlphaF(self.node.scene.parent.settings_menu.nodes_transparency_title / 100)
@@ -392,7 +411,7 @@ class QDMGraphicsNode(QGraphicsItem):
             self.title_item.setFont(self._title_font)
         self.title_item.setPos(self._padding, 0)
 
-    def paint(self, painter, QStyleOptionGraphicsItem, widget=None): 
+    def paint(self, painter:QPainter, QStyleOptionGraphicsItem:QStyleOptionGraphicsItem, widget=None): 
         if not self.node.is_deleting:
             if self.isSelected():
                 if self.first_load_content:
@@ -408,6 +427,8 @@ class QDMGraphicsNode(QGraphicsItem):
                 content_size = self.content.main_layout.contentsRect()
                 self.node_height = (summary_size.height() if summary_size.height() > content_size.height() else content_size.height()) + (2 * self.edge_size) + self.title_height
                 self.node_width = (summary_size.width() if summary_size.width() > content_size.width() else content_size.width()) + (4 * self.edge_size)
+
+                self.info.move(self.node_width - self.title_height - 2, -2)
 
                 if self.node.node_input is not None:
                     self.node.node_input.grSocket.setPos(*self.node.node_input.node.getSocketPosition(self.node.node_input.index, self.node.node_input.position))
@@ -427,7 +448,7 @@ class QDMGraphicsNode(QGraphicsItem):
                         self._current_pen = self._pen_picker
                     else:
                         self._current_pen = self._pen_selected
-                    self.setZValue(5)
+                    self.setZValue(100)
                     self.selected = True
             else:
                 if not self.first_load_content:
@@ -435,9 +456,11 @@ class QDMGraphicsNode(QGraphicsItem):
 
                 if self.first_load_summary:
                     self.initSummary()
+                    self.initInfo()
                     self.first_load_summary = False
                 else:
                     self.summary.show()
+                    self.info.move(self.node_width - self.title_height - 2, -2)
 
                 default = True
                 if self.node.node_input is not None:
@@ -446,11 +469,11 @@ class QDMGraphicsNode(QGraphicsItem):
                         self.node.node_input.edge.updatePositions() 
                         if self.node.node_input.edge.grEdge.isSelected():
                             self._current_pen = self._pen_selected
-                            self.setZValue(4)
+                            self.setZValue(80)
                             default = False
                         elif self.node.node_input.edge.start_socket.node.grNode.isSelected():
                             self._current_pen = self._pen_output
-                            self.setZValue(2)
+                            self.setZValue(70)
                             default = False
                 if self.node.node_output is not None:
                     self.node.node_output.grSocket.setPos(*self.node.node_output.node.getSocketPosition(self.node.node_output.index, self.node.node_output.position))
@@ -458,14 +481,14 @@ class QDMGraphicsNode(QGraphicsItem):
                         self.node.node_output.edge.updatePositions() 
                         if self.node.node_output.edge.grEdge.isSelected():
                             self._current_pen = self._pen_selected
-                            self.setZValue(4)
+                            self.setZValue(80)
                             default = False
                         elif self.node.node_output.edge.end_socket.node.grNode.isSelected():
                             if NodeType(self.node.nodeType) == NodeType.Picker:
                                 self._current_pen = self._pen_picker
                             else:
                                 self._current_pen = self._pen_input
-                            self.setZValue(2)
+                            self.setZValue(70)
                             default = False
                 for input in self.node.picker_inputs:
                     input.grSocket.setPos(*input.node.getSocketPosition(input.index, input.position))
@@ -473,16 +496,16 @@ class QDMGraphicsNode(QGraphicsItem):
                         input.edge.updatePositions()
                         if input.edge.grEdge.isSelected():
                             self._current_pen = input.edge.start_socket.node.grNode._pen_picker
-                            self.setZValue(4)
+                            self.setZValue(80)
                             default = False
                             break
                         elif input.edge.start_socket.node.grNode.isSelected():
                             if NodeType(input.edge.start_socket.node.nodeType) == NodeType.Picker:
                                 self._current_pen = input.edge.start_socket.node.grNode._pen_picker
-                                self.setZValue(4)
+                                self.setZValue(80)
                             else:
                                 self._current_pen = self._pen_output
-                                self.setZValue(2)
+                                self.setZValue(70)
                             default = False
                             break
                 if self.selected:
@@ -493,7 +516,7 @@ class QDMGraphicsNode(QGraphicsItem):
                     self.selected = False
                 if default:
                     self._current_pen = self._pen_default
-                    self.setZValue(0)
+                    self.setZValue(5)
                     
             # title
             path_title = QPainterPath()
@@ -508,7 +531,7 @@ class QDMGraphicsNode(QGraphicsItem):
             # content
             path_content = QPainterPath()
             path_content.setFillRule(Qt.FillRule.WindingFill)
-            path_content.addRoundedRect(0, self.title_height, (self.node_width if self.node_width > 0 else self.width), (self.node_height + self.title_height if self.node_width > 0 else self.height) - self.title_height, self.edge_size, self.edge_size)
+            path_content.addRoundedRect(0, self.title_height, (self.node_width if self.node_width > 0 else self.width), self.checkHeight() - self.title_height, self.edge_size, self.edge_size)
             path_content.addRect(0, self.title_height, self.edge_size, self.edge_size)
             path_content.addRect((self.node_width if not self.isSelected() else self.node_width) - self.edge_size, self.title_height, self.edge_size, self.edge_size)
             painter.setPen(Qt.PenStyle.NoPen)
@@ -517,22 +540,41 @@ class QDMGraphicsNode(QGraphicsItem):
 
             # outline
             path_outline = QPainterPath()
-            path_outline.addRoundedRect(0, 0, (self.node_width if self.node_width > 0 else self.width), (self.node_height + self.title_height if self.node_width > 0 else self.height), self.edge_size, self.edge_size)
+            path_outline.addRoundedRect(0, 0, (self.node_width if self.node_width > 0 else self.width), self.checkHeight(), self.edge_size, self.edge_size)
                 
             painter.setPen(self._current_pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(path_outline.simplified())
         
+    def initInfo(self):
+        self.grInfo = QGraphicsProxyWidget(self)
+        self.info.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.info.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.grInfo.setWidget(self.info)
+        self.info.setGeometry(self.width - self._padding - 2, -2, self.title_height + 4, self.title_height + 4)  
+
     def initContent(self):
         self.grContent = QGraphicsProxyWidget(self)
         self.content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.content.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.grContent.setWidget(self.content)
-        self.content.setGeometry(self.edge_size, self.title_height + self.edge_size, self.width, 0)  
+        self.content.setGeometry(self.edge_size, self.title_height + self.edge_size, self.width, 0)
 
     def initSummary(self):
         self.grSummary = QGraphicsProxyWidget(self)
         self.summary.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.summary.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.grSummary.setWidget(self.summary)
-        self.summary.setGeometry(self.edge_size, self.title_height - self._padding, self.width, 0)        
+        self.summary.setGeometry(self.edge_size, self.title_height - self._padding, self.width, 0) 
+    
+    def checkHeight(self, spacing:float = 0):
+        if self.node_height > 0 and self.node_height + spacing > self.height:
+            return self.node_height + self.title_height + spacing
+        else:
+            return self.height + self.title_height
+        
+    def checkWidth(self, spacing:float = 0):
+        if self.node_width > 0 and self.node_width + spacing > self.width:
+            return self.node_width + spacing
+        else:
+            return self.width

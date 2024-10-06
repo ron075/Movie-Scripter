@@ -20,7 +20,6 @@ class NodeBase(QWidget):
             self.title = title
         else:
             self.title = f"{title}: {self.summary.node.nodeID}"
-        
         self.start_script_string = f""
         self.script_string = f""
         self.end_script_string = f""
