@@ -16,10 +16,10 @@ class NodeType(Enum):
     Picker = 10
     CenterRotation = 11
     CenterMass = 12
-    View = 13
-    Fly = 14
-    Delete = 15
-    Camera = 16
+    View_Save = 13
+    View_Load = 14
+    Fly = 15
+    Delete = 16
     Summary = 17
     Split = 18
 

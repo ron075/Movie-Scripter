@@ -160,9 +160,9 @@ class MovieMaker(ToolInstance):
                     data["content.Frames"] = node.Frames.Text.text()
                 elif NodeType(item.nodeType) == NodeType.Crossfade:
                     data["content.Frames"] = node.Frames.Text.text()
-                elif NodeType(item.nodeType) == NodeType.View:
-                    data["content.Tab"] = node.Tab.currentIndex()
+                elif NodeType(item.nodeType) == NodeType.View_Save:
                     data["content.Name"] = node.Name.text()
+                elif NodeType(item.nodeType) == NodeType.View_Load:
                     data["content.View"] = node.View.currentIndex()
                     data["content.Clip"] = node.Clip.isChecked()
                     data["content.Cofr"] = node.Cofr.isChecked()
@@ -407,10 +407,11 @@ class MovieMaker(ToolInstance):
         elif NodeType(data["nodeType"]) == NodeType.Crossfade:
             node = Node(self.tool_session, self.frame.scene, NodeType.Crossfade, data["nodeID"])
             node.content.Frames.setText(data["content.Frames"])
-        elif NodeType(data["nodeType"]) == NodeType.View:
-            node = Node(self.tool_session, self.frame.scene, NodeType.View, data["nodeID"], view_input=True)
-            node.content.Tab.setCurrentIndex(int(data["content.Tab"]))
+        elif NodeType(data["nodeType"]) == NodeType.View_Save:
+            node = Node(self.tool_session, self.frame.scene, NodeType.View_Save, data["nodeID"], view_input=True)
             node.content.Name.setText(data["content.Name"])
+        elif NodeType(data["nodeType"]) == NodeType.View_Load:
+            node = Node(self.tool_session, self.frame.scene, NodeType.View_Load, data["nodeID"], view_input=True)
             node.content.View.setCurrentIndex(int(data["content.View"]))
             node.content.Clip.setChecked(data["content.Clip"])
             node.content.Cofr.setChecked(data["content.Cofr"])
@@ -567,15 +568,17 @@ class MovieMaker(ToolInstance):
 
     def saveSession(self) -> dict:
         data = {}
-        data["settings.normal_residues"] = self.frame.settings_menu.normal_residues
         data["settings.model_residues"] = self.frame.settings_menu.model_residues
-        data["settings.model_special_residues"] = self.frame.settings_menu.model_special_residues
         data["settings.model_atoms"] = self.frame.settings_menu.model_atoms
+        data["settings.model_hetero"] = self.frame.settings_menu.model_hetero
+        data["settings.model_water"] = self.frame.settings_menu.model_water
         data["settings.save_script_folder"] = self.frame.settings_menu.save_script_folder
         data["settings.save_log_folder"] = self.frame.settings_menu.save_log_folder
         data["settings.nodes_transparency_title"] = self.frame.settings_menu.nodes_transparency_title
         data["settings.nodes_transparency_background"] = self.frame.settings_menu.nodes_transparency_background
         data["settings.command_delay"] = self.frame.settings_menu.command_delay
+        data["settings.current_info_type"] = self.frame.settings_menu.current_info_type
+        data["log"] = self.frame.log
 
         data["style_mode"] = self.frame.theme_toggle.isChecked()
         data["simple_mode"] = self.frame.simple_mode
@@ -608,15 +611,17 @@ class MovieMaker(ToolInstance):
         return data
 
     def loadSession(self, data):
-        self.frame.settings_menu.normal_residues = data["settings.normal_residues"]
         self.frame.settings_menu.model_residues = data["settings.model_residues"]
-        self.frame.settings_menu.model_special_residues = data["settings.model_special_residues"]
         self.frame.settings_menu.model_atoms = data["settings.model_atoms"]
+        self.frame.settings_menu.model_hetero = data["settings.model_hetero"]
+        self.frame.settings_menu.model_water = data["settings.model_water"]
         self.frame.settings_menu.save_script_folder = data["settings.save_script_folder"]
         self.frame.settings_menu.save_log_folder = data["settings.save_log_folder"]
         self.frame.settings_menu.nodes_transparency_title = int(data["settings.nodes_transparency_title"])
         self.frame.settings_menu.nodes_transparency_background = int(data["settings.nodes_transparency_background"])
-        self.frame.settings_menu.command_delay = float(data["settings.command_delay"])
+        self.frame.settings_menu.command_delay = data["log"]
+        self.frame.log = float(data["settings.command_delay"])
+        self.frame.settings_menu.current_info_type = int(data["settings.current_info_type"])
 
         self.frame.theme_toggle.setChecked(data["style_mode"])
         self.frame.simple_mode = not data["simple_mode"]

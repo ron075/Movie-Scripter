@@ -21,9 +21,19 @@ DONE:
 	mark special amino acids in preset in atoms and coloring - Done
 	Check why the movie is slowing down after a couple of runs - movie reset fix - rotation will apply for the entire scene when everything is picked - Done
 	Fix preset not working when no submodel - should only do stuff for the one model - Done
+	Added a search option in the picker. Changed the groupings, now heteroatom and water have their own groups (still appear in model selection at the same time) - Done
+	Added info buttons to nodes with tooltip styling and formal and simple help string (formal is from the site, simple is something i wrote) - Done
+	Start node was renamed to "Record" and can get an input now. all nodes that come before it will be applied before the recording starts - Done	
+	End node was renamed to "Finish"  - Done
 
 
 TODO:
+Check why run chain not being enabled in simple mode
+Check weird functionality in pick, copy and paste buttons in pickers
+
+Add Volume picker
+Make sure command works on volumes
+
 Add moving subunits preset 
 
 Test it with volumes

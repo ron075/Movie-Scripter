@@ -114,8 +114,9 @@ class AdvancedNodeStart(NodeBase):
 
         if self.Record.isChecked():
             self.start_script_string += f"movie reset<br>"
-            self.start_script_string += f"movie record;<br>"
             self.start_script_string += f"<br>"
+            self.script_string += f"movie record;<br>"
+            self.script_string += f"<br>"
         else:
             self.start_script_string += f"movie reset<br>"
             self.start_script_string += f"<br>"
@@ -1886,27 +1887,18 @@ class AdvancedNodeDelete(NodeBase):
         self.Run.setFixedWidth(50)
         self.Run.setEnabled(False)
         self.Run.clicked.connect(self.startRunCommand)
-        self.RunChain = QPushButton("Run Chain")
-        self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
-        self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
-        self.layoutH3.addWidget(self.RunChain)
 
         self.main_layout.addLayout(self.layoutH1)
         self.main_layout.addLayout(self.layoutH2)
         self.main_layout.addLayout(self.layoutH3)
         
     def updateRun(self, chain_update:bool=False):
-        current_run = self.Run.isEnabled()
         if self.summary.picker_delete != []:
             self.Run.setEnabled(True)
         else:
             self.Run.setEnabled(False)
-        if current_run != self.Run.isEnabled():
-            if not chain_update:
-                self.summary.findLastNode()
         
     def updateTab(self, current_type:int):
         self.current_type = current_type
@@ -2090,7 +2082,7 @@ class AdvancedNodeCrossfade(NodeBase):
         
         return [self.start_script_string, self.script_string, self.end_script_string]    
 
-class AdvancedNodeView(NodeBase):
+class AdvancedNodeSaveView(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
         super().__init__(session, summary, title, simple_node=False, parent=parent)
 
@@ -2102,47 +2094,97 @@ class AdvancedNodeView(NodeBase):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.main_layout)
 
-        self.Tab = QTabWidget()
-        self.container1 = QWidget()
-        self.layoutT1V1 = QVBoxLayout(self.container1)
-        self.layoutT1V1H1 = QHBoxLayout()
+        self.layoutH1 = QHBoxLayout()
         self.lName = QLabel("Name")
         self.Name = QLineEdit()
         self.Name.textChanged.connect(self.internal_updateRun)
-        self.layoutT1V1H1.addWidget(self.lName)
-        self.layoutT1V1H1.addWidget(self.Name)
-        self.layoutT1V1.addLayout(self.layoutT1V1H1)
-        self.container2 = QWidget()
-        self.layoutT2V1 = QVBoxLayout(self.container2)
-        self.layoutT2V1H1 = QHBoxLayout()
+        self.layoutH1.addWidget(self.lName)
+        self.layoutH1.addWidget(self.Name)
+
+        self.layoutH2 = QHBoxLayout()
+        self.Delete = QPushButton("Delete")
+        self.Delete.setFixedWidth(60)
+        self.Delete.clicked.connect(self.deleteNode) 
+        self.Run = QPushButton("Run")
+        self.Run.setFixedWidth(50)
+        self.Run.setEnabled(False)
+        self.Run.clicked.connect(self.startRunCommand)
+        self.layoutH2.addWidget(self.Delete)
+        self.layoutH2.addWidget(self.Run)
+
+        self.main_layout.addLayout(self.layoutH1)
+        self.main_layout.addLayout(self.layoutH2)
+
+    def updateRun(self, chain_update:bool=False):
+        if self.Name.text() == "":
+            self.Run.setEnabled(False)
+        else:
+            self.Run.setEnabled(True)
+
+    def updateTab(self, current_type:int):
+        pass
+    
+    def updateComment(self) -> list[str]:
+        start_script_string_comment = f""
+        script_string_comment = f"<u><b>{self.summary.node.nodeType.name}: {self.summary.node.nodeID}</b></u><br>"
+        end_script_string_comment = f""
+
+        if self.Run.isEnabled():
+            script_string_comment += f"Saves a view with the name '{self.Name.text()}'<br>"
+            script_string_comment += f"<br>"
+            
+        return [start_script_string_comment, script_string_comment, end_script_string_comment]
+
+    def updateCommand(self) -> list[str]:
+        super().updateCommand()
+
+        if self.Run.isEnabled():
+            if self.Name.text() != "":
+                self.script_string += f"view name {self.Name.text()}<br>"
+                self.script_string += f"<br>"
+
+        return [self.start_script_string, self.script_string, self.end_script_string]
+
+class AdvancedNodeLoadView(NodeBase):
+    def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
+        super().__init__(session, summary, title, simple_node=False, parent=parent)
+
+        self.initUI()  
+
+    def initUI(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setSpacing(5)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.setLayout(self.main_layout)
+
+        self.layoutV1 = QVBoxLayout()
+        self.layoutV1H1 = QHBoxLayout()
         self.lView = QLabel("View")
         self.View = QComboBox()
         self.View.addItems(["Original", "Orient", "Initial", "Custom"])
         self.View.currentIndexChanged.connect(self.internal_updateRun)
-        self.layoutT2V1H1.addWidget(self.lView)
-        self.layoutT2V1H1.addWidget(self.View)
-        self.layoutT2V1H2 = QHBoxLayout()
-        self.layoutT2V1H2V1 = QVBoxLayout()
+        self.layoutV1H1.addWidget(self.lView)
+        self.layoutV1H1.addWidget(self.View)
+        self.layoutV1H2 = QHBoxLayout()
+        self.layoutV1H2V1 = QVBoxLayout()
         self.lClip = QLabel("Clip")
         self.Clip = QSwitchControl(self.summary.node.scene.parent)
         self.summary.node.scene.parent.switches.append(self.Clip)
-        self.layoutT2V1H2V1.addWidget(self.lClip)
-        self.layoutT2V1H2V1.addWidget(self.Clip)
-        self.layoutT2V1H2V2 = QVBoxLayout()
+        self.layoutV1H2V1.addWidget(self.lClip)
+        self.layoutV1H2V1.addWidget(self.Clip)
+        self.layoutV1H2V2 = QVBoxLayout()
         self.lCofr = QLabel("Cofr")
         self.Cofr = QSwitchControl(self.summary.node.scene.parent)
         self.summary.node.scene.parent.switches.append(self.Cofr)
-        self.layoutT2V1H2V2.addWidget(self.lCofr)
-        self.layoutT2V1H2V2.addWidget(self.Cofr)
-        self.layoutT2V1H2.addLayout(self.layoutT2V1H2V1)
-        self.layoutT2V1H2.addLayout(self.layoutT2V1H2V2)
+        self.layoutV1H2V2.addWidget(self.lCofr)
+        self.layoutV1H2V2.addWidget(self.Cofr)
+        self.layoutV1H2.addLayout(self.layoutV1H2V1)
+        self.layoutV1H2.addLayout(self.layoutV1H2V2)
         self.Pad = QNumEdit(min=None, max=1, step=1, decimals=2, addSlider=False, label="Pad")
         self.Pad.setText("0.05")
-        self.layoutT2V1.addLayout(self.layoutT2V1H1)
-        self.layoutT2V1.addLayout(self.layoutT2V1H2)
-        self.layoutT2V1.addLayout(self.Pad.widget_layout)
-        self.Tab.insertTab(0, self.container1, "Save")
-        self.Tab.insertTab(1, self.container2, "Load")
+        self.layoutV1.addLayout(self.layoutV1H1)
+        self.layoutV1.addLayout(self.layoutV1H2)
+        self.layoutV1.addLayout(self.Pad.widget_layout)
 
         self.layoutH1 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
@@ -2160,14 +2202,12 @@ class AdvancedNodeView(NodeBase):
         self.layoutH1.addWidget(self.Run)
         self.layoutH1.addWidget(self.RunChain)
 
-        self.Tab.currentChanged.connect(self.internal_updateRun)
-
-        self.main_layout.addWidget(self.Tab)
+        self.main_layout.addLayout(self.layoutV1)
         self.main_layout.addLayout(self.layoutH1)
 
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
-        if (self.Tab.currentIndex() == 0 and self.Name.text() == "") or (self.Tab.currentIndex() == 1 and self.View.currentText() == "Custom" and self.summary.used_view == []):
+        if (self.View.currentText() == "Custom" and self.summary.used_view == []):
             self.Run.setEnabled(False)
         else:
             self.Run.setEnabled(True)
@@ -2184,33 +2224,30 @@ class AdvancedNodeView(NodeBase):
         end_script_string_comment = f""
 
         if self.Run.isEnabled():
-            if self.Tab.currentIndex() == 0:
-                script_string_comment += f"Saves a view with the name '{self.Name.text()}'<br>"
-            elif self.Tab.currentIndex() == 1:
-                if self.View.currentText() == "Original":
-                    script_string_comment += f"Resets the view to the inital state and orient axis to standard orientation"
-                elif self.View.currentText() == "Orient":
-                    script_string_comment += f"Orient axis to standard orientation"
-                elif self.View.currentText() == "Initial":
-                    script_string_comment += f"Resets the view to the inital state"
-                elif self.View.currentText() == "Custom":
-                    objects = "".join(self.summary.used_view)
-                    if objects == "All":
-                        objects = "all models"
-                    view = f"Change view to <i>'{objects}'</i><br>"
-                    if self.Clip.isChecked():
-                        clip = f"   • Clipping applied<br>;"
-                    else:
-                        clip = ""
-                    if self.Pad.Text.text():
-                        pad = f"   • Padding applied<br>;"
-                    else:
-                        pad = ""
-                    if self.Cofr.isChecked():
-                        cofr = f"   • Sets <i>'{objects}'</i> as center of rotation;"
-                    else:
-                        cofr = ""
-                    script_string_comment += f"{view} {clip} {pad} {cofr}<br>"
+            if self.View.currentText() == "Original":
+                script_string_comment += f"Resets the view to the inital state and orient axis to standard orientation"
+            elif self.View.currentText() == "Orient":
+                script_string_comment += f"Orient axis to standard orientation"
+            elif self.View.currentText() == "Initial":
+                script_string_comment += f"Resets the view to the inital state"
+            elif self.View.currentText() == "Custom":
+                objects = "".join(self.summary.used_view)
+                if objects == "All":
+                    objects = "all models"
+                view = f"Change view to <i>'{objects}'</i><br>"
+                if self.Clip.isChecked():
+                    clip = f"   • Clipping applied<br>;"
+                else:
+                    clip = ""
+                if self.Pad.Text.text():
+                    pad = f"   • Padding applied<br>;"
+                else:
+                    pad = ""
+                if self.Cofr.isChecked():
+                    cofr = f"   • Sets <i>'{objects}'</i> as center of rotation;"
+                else:
+                    cofr = ""
+                script_string_comment += f"{view} {clip} {pad} {cofr}<br>"
             script_string_comment += f"<br>"
             
         return [start_script_string_comment, script_string_comment, end_script_string_comment]
@@ -2219,35 +2256,30 @@ class AdvancedNodeView(NodeBase):
         super().updateCommand()
 
         if self.Run.isEnabled():
-            if self.Tab.currentIndex() == 0:
-                if self.Name.text() != "":
-                    self.script_string += f"view name {self.Name.text()}<br>"
-                    self.script_string += f"<br>"
-            elif self.Tab.currentIndex() == 1:
-                if self.View.currentText() == "Original":
-                    view = f"view orient; view initial"
-                    self.script_string += f"{view}<br>"
-                    self.script_string += f"<br>"
-                elif self.View.currentText() == "Orient":
-                    view = f"view orient"
-                    self.script_string += f"{view}<br>"
-                    self.script_string += f"<br>"
-                elif self.View.currentText() == "Initial":
-                    view = f"view initial"
-                    self.script_string += f"{view}<br>"
-                    self.script_string += f"<br>"
-                elif self.View.currentText() == "Custom":
-                    objects = "".join(self.summary.used_view)
-                    if objects == "All":
-                        objects = f"<i>'{objects.lower()}'</i>"
-                    else:
-                        objects = f"<i>'{objects}'</i>"
-                    view = f"view {objects}"
-                    clip = f"clip {self.Clip.isChecked()}"
-                    pad = f"pad {self.Pad.getText()}"
-                    cofr = f"cofr {self.Cofr.isChecked()}"
-                    self.script_string += f"{view} {clip} {pad} {cofr}<br>"
-                    self.script_string += f"<br>"
+            if self.View.currentText() == "Original":
+                view = f"view orient; view initial"
+                self.script_string += f"{view}<br>"
+                self.script_string += f"<br>"
+            elif self.View.currentText() == "Orient":
+                view = f"view orient"
+                self.script_string += f"{view}<br>"
+                self.script_string += f"<br>"
+            elif self.View.currentText() == "Initial":
+                view = f"view initial"
+                self.script_string += f"{view}<br>"
+                self.script_string += f"<br>"
+            elif self.View.currentText() == "Custom":
+                objects = "".join(self.summary.used_view)
+                if objects == "All":
+                    objects = f"<i>'{objects.lower()}'</i>"
+                else:
+                    objects = f"<i>'{objects}'</i>"
+                view = f"view {objects}"
+                clip = f"clip {self.Clip.isChecked()}"
+                pad = f"pad {self.Pad.getText()}"
+                cofr = f"cofr {self.Cofr.isChecked()}"
+                self.script_string += f"{view} {clip} {pad} {cofr}<br>"
+                self.script_string += f"<br>"
         
         return [self.start_script_string, self.script_string, self.end_script_string]
 
@@ -2449,26 +2481,17 @@ class AdvancedNodeSplit(NodeBase):
         self.Run.setFixedWidth(50)
         self.Run.setEnabled(False)
         self.Run.clicked.connect(self.startRunCommand)
-        self.RunChain = QPushButton("Run Chain")
-        self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
-        self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
-        self.layoutH2.addWidget(self.RunChain)
 
         self.main_layout.addWidget(self.Model)
         self.main_layout.addLayout(self.layoutH2)
 
     def updateRun(self, chain_update:bool=False): 
-        current_run = self.Run.isEnabled()  
         if self.summary.used_model != []: 
             self.Run.setEnabled(True)
         else:
             self.Run.setEnabled(False)   
-        if current_run != self.Run.isEnabled():
-            if not chain_update:
-                self.summary.findLastNode() 
                 
     def updateTab(self, current_type:int):
         pass
@@ -2702,7 +2725,8 @@ class AdvancedNodeSummary(QWidget):
                 self.ModelCheck.setEnabled(False)
                 self.layoutH1.addWidget(self.ModelImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lModel, alignment=Qt.AlignmentFlag.AlignLeft)
-                self.layoutH1.addWidget(self.ModelToggle, alignment=Qt.AlignmentFlag.AlignLeft)
+                if NodeType(self.node.nodeType) != NodeType.Split:
+                    self.layoutH1.addWidget(self.ModelToggle, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.ModelCheck, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.main_layout.addLayout(self.layoutH1)
             if color_input:
@@ -2772,22 +2796,6 @@ class AdvancedNodeSummary(QWidget):
                 self.layoutH1.addWidget(self.FlyToggle, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.FlyCheck, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.main_layout.addLayout(self.layoutH1)
-            if fly_input:
-                self.layoutH1 = QHBoxLayout()
-                self.FlyImportant = QCheckBox()
-                self.FlyImportant.setEnabled(False)
-                self.FlyImportant.setProperty("important", "True")
-                self.lFly = QLabel("Fly:")
-                self.FlyToggle = QSwitchControl(self.node.scene.parent)
-                self.node.scene.parent.switches.append(self.FlyToggle)
-                self.FlyToggle.stateChanged.connect(self.updateFlyPicker)
-                self.FlyCheck = QCheckBox()
-                self.FlyCheck.setEnabled(False)
-                self.layoutH1.addWidget(self.FlyImportant, alignment=Qt.AlignmentFlag.AlignLeft)
-                self.layoutH1.addWidget(self.lFly, alignment=Qt.AlignmentFlag.AlignLeft)
-                self.layoutH1.addWidget(self.FlyToggle, alignment=Qt.AlignmentFlag.AlignLeft)
-                self.layoutH1.addWidget(self.FlyCheck, alignment=Qt.AlignmentFlag.AlignLeft)
-                self.main_layout.addLayout(self.layoutH1)
             if NodeType(self.node.nodeType) == NodeType.Delete:
                 self.layoutH1 = QHBoxLayout()
                 self.DeleteImportant = QCheckBox()
@@ -2800,19 +2808,19 @@ class AdvancedNodeSummary(QWidget):
                 self.layoutH1.addWidget(self.lDelete, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.DeleteCheck, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.main_layout.addLayout(self.layoutH1)
-
-            self.layoutH2 = QHBoxLayout()
-            self.lFrames = QLabel(f"Frames: {self.used_frames}")
-            self.layoutH2.addWidget(self.lFrames, alignment=Qt.AlignmentFlag.AlignLeft)
-            self.layoutH3 = QHBoxLayout()
-            self.lTotalFrames = QLabel(f"Total Frames: {self.total_frames}")
-            self.layoutH3.addWidget(self.lTotalFrames, alignment=Qt.AlignmentFlag.AlignLeft)
-            self.layoutH4 = QHBoxLayout()
-            self.lLength = QLabel(f"Length: {self.convertTime(0)}")
-            self.layoutH4.addWidget(self.lLength, alignment=Qt.AlignmentFlag.AlignLeft)
-            self.main_layout.addLayout(self.layoutH2)
-            self.main_layout.addLayout(self.layoutH3)
-            self.main_layout.addLayout(self.layoutH4)
+            if self.node.has_input or self.node.has_output:
+                self.layoutH2 = QHBoxLayout()
+                self.lFrames = QLabel(f"Frames: {self.used_frames}")
+                self.layoutH2.addWidget(self.lFrames, alignment=Qt.AlignmentFlag.AlignLeft)
+                self.layoutH3 = QHBoxLayout()
+                self.lTotalFrames = QLabel(f"Total Frames: {self.total_frames}")
+                self.layoutH3.addWidget(self.lTotalFrames, alignment=Qt.AlignmentFlag.AlignLeft)
+                self.layoutH4 = QHBoxLayout()
+                self.lLength = QLabel(f"Length: {self.convertTime(0)}")
+                self.layoutH4.addWidget(self.lLength, alignment=Qt.AlignmentFlag.AlignLeft)
+                self.main_layout.addLayout(self.layoutH2)
+                self.main_layout.addLayout(self.layoutH3)
+                self.main_layout.addLayout(self.layoutH4)
             
     def findLastNode(self):
         no_outputs = True
@@ -2830,7 +2838,8 @@ class AdvancedNodeSummary(QWidget):
         if self.node.node_input is not None:
             if self.node.node_input.hasEdge():
                 run_enabled = self.node.node_input.edge.start_socket.node.summary.updateChainRun(run_enabled)
-        self.node.content.RunChain.setEnabled(run_enabled)
+        if hasattr(self.node.content, "RunChain"):
+            self.node.content.RunChain.setEnabled(run_enabled)
         return run_enabled
     
     def updateModelPicker(self):

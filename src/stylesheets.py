@@ -71,6 +71,7 @@ class Stylesheets():
         self._settings = ["light_settings.png", "dark_settings.png"]
         self._light_mode = ["light_light_mode.png", "dark_light_mode.png"]
         self._dark_mode = ["light_dark_mode.png", "dark_dark_mode.png"]
+        self._info = ["light_info.png", "dark_info.png"]
 
         base_path = "/".join(base_path.split("\\")) + "/resources"
         return { "LIGHT":self.create_style(base_path, 0), "DARK":self.create_style(base_path, 1)}
@@ -417,6 +418,13 @@ class Stylesheets():
             #dark_mode {{
                 image : url({base_path}/{self._dark_mode[index]});
             }}
+            #info {{
+                image : url({base_path}/{self._info[index]});
+                background : transparent;
+                color : transparent;
+                border : none;
+                border-radius : 12px;
+            }}
             QSplitter::handle {{
                 background : {self._frame_color[index]};
             }}
@@ -425,5 +433,11 @@ class Stylesheets():
                 background : transparent;
                 color : transparent;
                 image : url({base_path}/{self._settings[index]});
-            }}"""
+            }}
+            QToolTip {{
+                border : 2px solid {self._menu_border[index]};;
+                background : {self._frame_color[index]}; 
+                color : {self._color[index]}; 
+            }}
+            """
         return style

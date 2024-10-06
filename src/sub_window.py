@@ -24,16 +24,12 @@ class SettingsMenu(QWidget):
         self.moving=False
         self.offset = 0
 
-        self.settings_widgets = {}
+        self.settings_widgets:dict[str,QWidget] = {}
 
-        self.base_normal_residues = ["ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PYL", "PRO", "GLN", "ARG", "SER", "THR", "SEC", "VAL", "TRP", "TYR"]
-        self.base_normal_residues.sort()
-        self.normal_residues = list(self.base_normal_residues)
-        self.settings_residue_list = list(self.base_normal_residues)
-
-        self.model_special_residues = True
         self.model_residues = True
         self.model_atoms = False
+        self.model_hetero = True
+        self.model_water = True
 
         self.save_script_folder = ""
         self.save_log_folder = ""
@@ -43,11 +39,13 @@ class SettingsMenu(QWidget):
 
         self.command_delay:float = 0.0
 
-        self.update_normal_residues = False
+        self.current_info_type:int = 0
+
         self.update_model = False
         self.update_folder = False
         self.update_nodes = False
         self.update_run = False
+        self.update_info = False
 
         self.initUI()
 
@@ -60,64 +58,33 @@ class SettingsMenu(QWidget):
 
         self.settings_scroll = QScrollArea()
 
-        self.residues_widget = QWidget()
-
-        self.residues_layout = QGridLayout()
-
-        self.lNormalResidues = QLabel("Normal Residues")
-        self.NormalResidue = QLineEdit()
-        self.NormalResidue.setMaximumWidth(50)
-        self.AddNormalResidue = QPushButton("Add")
-        self.AddNormalResidue.setEnabled(False)
-        self.NormalResidue.textChanged.connect(self.updateAddNormalResidue)
-        self.AddNormalResidue.clicked.connect(self.addNormalResidueList)
-
-        self.NormalResidueList = QListWidget()
-        self.NormalResidueList.setObjectName("list")
-        self.NormalResidueList.setMaximumWidth(100)
-        self.NormalResidueList.setSortingEnabled(True)
-        self.NormalResidueList.currentRowChanged.connect(self.updateRemoveNormalResidue)
-
-        self.RemoveNormalResidue = QPushButton("Remove")
-        self.RemoveNormalResidue.setEnabled(False)
-        self.RemoveNormalResidue.clicked.connect(self.removeNormalResidueList)
-        self.ResetNormalResidue = QPushButton("Reset")
-        self.ResetNormalResidue.clicked.connect(self.resetResidues)
-
-        self.residues_layout.addWidget(self.lNormalResidues, 0, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
-        self.residues_layout.addWidget(self.NormalResidue, 1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.residues_layout.addWidget(self.AddNormalResidue, 1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.residues_layout.addWidget(self.NormalResidueList, 2, 0, 4, 2, Qt.AlignmentFlag.AlignCenter)
-        self.residues_layout.addWidget(self.RemoveNormalResidue, 6, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.residues_layout.addWidget(self.ResetNormalResidue, 6, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-
-        self.residues_widget.setLayout(self.residues_layout)
-        self.residues_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-
-
         self.model_widget = QWidget()
 
         self.model_layout = QGridLayout()
         self.lModelResidues = QLabel("Residues")   
         self.lModelResidues.setMinimumWidth(100)
         self.ModelResidues = QSwitchControl(self.parent_window, checked=self.model_residues)
-        self.lModelSpecialResidues = QLabel("Special\nResidues")        
-        self.lModelSpecialResidues.setMinimumWidth(100)
-        self.ModelSpecialResidues = QSwitchControl(self.parent_window, checked=self.model_special_residues)
-        self.ModelResidues.stateChanged.connect(self.updateModelAtoms)
         self.lModelAtoms = QLabel("Atoms")   
         self.lModelAtoms.setMinimumWidth(100)
         self.ModelAtoms = QSwitchControl(self.parent_window, checked=self.model_atoms)
+        self.lModelHetero = QLabel("Hetero")   
+        self.lModelHetero.setMinimumWidth(100)
+        self.ModelHetero = QSwitchControl(self.parent_window, checked=self.model_hetero)
+        self.lModelWater = QLabel("Water")   
+        self.lModelWater.setMinimumWidth(100)
+        self.ModelWater = QSwitchControl(self.parent_window, checked=self.model_water)
+        self.ModelResidues.stateChanged.connect(self.updateModelAtoms)
         self.ResetModel = QPushButton("Reset")
         self.ResetModel.clicked.connect(self.resetModel)
         self.model_layout.addWidget(self.lModelResidues, 0, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
         self.model_layout.addWidget(self.ModelResidues, 0, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelSpecialResidues, 1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelSpecialResidues, 1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelAtoms, 2, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelAtoms, 2, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ResetModel, 3, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelAtoms, 1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelAtoms, 1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelHetero, 2, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelHetero, 2, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelWater, 3, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ModelWater, 3, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.ResetModel, 4, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.model_widget.setLayout(self.model_layout)
         self.model_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -189,11 +156,32 @@ class SettingsMenu(QWidget):
         
 
 
-        self.settings_widgets["Residues"] = self.residues_widget
+        self.info_widget = QWidget()
+
+        self.info_layout = QVBoxLayout()
+        self.lInfoType = QLabel("Info type")   
+        self.lInfoType.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.InfoType = QComboBox()
+        self.InfoType.addItems(["Simple", "Formal"])
+        self.InfoType.setCurrentIndex(self.current_info_type)
+        self.InfoType.setMinimumWidth(100)
+        self.InfoType.currentIndexChanged.connect(self.change_info)
+        self.ResetModel = QPushButton("Reset")
+        self.ResetModel.clicked.connect(self.resetInfoType)
+        self.info_layout.addWidget(self.lInfoType, alignment= Qt.AlignmentFlag.AlignCenter)
+        self.info_layout.addWidget(self.InfoType, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.info_layout.addWidget(self.ResetModel, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.info_widget.setLayout(self.info_layout)
+        self.info_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+
+
         self.settings_widgets["Model"] = self.model_widget
         self.settings_widgets["Folder"] = self.folder_widget
         self.settings_widgets["Nodes"] = self.nodes_widget
         self.settings_widgets["Run"] = self.run_widget
+        self.settings_widgets["Info"] = self.info_widget
 
         for widget in self.settings_widgets.values():
             self.settings_scroll.setWidget(widget)
@@ -205,7 +193,9 @@ class SettingsMenu(QWidget):
         self.options.setCurrentRow(0)
         
         self.settings_scroll.setWidget(self.settings_widgets[self.options.currentItem().text()])
-        self.settings_scroll.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
+        self.settings_scroll.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum) 
+        self.settings_scroll.setMinimumWidth(200) 
+        self.settings_scroll.setMinimumHeight(300)
 
         self.options_layout.addWidget(self.options)
         self.options_layout.addWidget(self.settings_scroll)
@@ -223,7 +213,6 @@ class SettingsMenu(QWidget):
         self.settings_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
         self.setLayout(self.settings_layout)
-        
         self.hide()
 
     def mousePressEvent(self, event: QMouseEvent | None) -> None:
@@ -241,14 +230,11 @@ class SettingsMenu(QWidget):
 
     def openSettings(self):
         if self.parent_window.settings_button.property("State") == "Closed":
-            self.NormalResidueList.clear()
-            self.AddNormalResidue.setEnabled(False)
-            self.RemoveNormalResidue.setEnabled(False)
-            self.NormalResidueList.addItems(self.normal_residues)
 
-            self.ModelSpecialResidues.setChecked(self.model_special_residues)
             self.ModelResidues.setChecked(self.model_residues)
             self.ModelAtoms.setChecked(self.model_atoms)
+            self.ModelHetero.setChecked(self.model_hetero)
+            self.ModelWater.setChecked(self.model_water)
 
             if os.path.exists(self.save_script_folder):
                 self.lSaveScriptFolder.setText(self.save_script_folder)
@@ -275,43 +261,18 @@ class SettingsMenu(QWidget):
         self.settings_scroll.takeWidget()
         self.settings_scroll.setWidget(self.settings_widgets[self.options.currentItem().text()])
 
-    def updateAddNormalResidue(self, text:str):
-        if len(text) == 3:
-            if text.upper() not in self.normal_residues:
-                self.AddNormalResidue.setEnabled(True)
-            else:
-                self.AddNormalResidue.setEnabled(False)
-        else:
-            self.AddNormalResidue.setEnabled(False)
-
-    def updateRemoveNormalResidue(self, value):
-        if value > -1:
-            self.RemoveNormalResidue.setEnabled(True)
-        else:
-            self.RemoveNormalResidue.setEnabled(False)
-
-    def addNormalResidueList(self):
-        self.update_normal_residues = True
-        self.NormalResidueList.addItem(self.NormalResidue.text().upper())
-        self.settings_residue_list.append(self.NormalResidue.text().upper())
-        self.settings_residue_list.sort()
-        self.NormalResidue.clear()
-
-    def removeNormalResidueList(self):
-        self.update_normal_residues = True
-        row = self.NormalResidueList.currentIndex().row()
-        self.NormalResidueList.takeItem(row)
-        del self.settings_residue_list[row]
-
     def updateModelAtoms(self):
         if self.ModelResidues.isChecked():
-            self.ModelSpecialResidues.setEnabled(True)
             self.ModelAtoms.setEnabled(True)
+            self.ModelHetero.setEnabled(True)
+            self.ModelWater.setEnabled(True)
         else:
-            self.ModelSpecialResidues.setEnabled(False)
-            self.ModelSpecialResidues.setChecked(False)
             self.ModelAtoms.setEnabled(False)
             self.ModelAtoms.setChecked(False)
+            self.ModelHetero.setEnabled(False)
+            self.ModelHetero.setChecked(False)
+            self.ModelWater.setEnabled(False)
+            self.ModelWater.setChecked(False)
 
     def pickSaveScriptFolder(self):
         save_script_folder = str(QFileDialog.getExistingDirectory(self, "Select Save Folder"))
@@ -338,25 +299,24 @@ class SettingsMenu(QWidget):
                 self.lSaveLogFolder.setText("No Folder")
             self.update_folder = True
 
-    def resetResidues(self):
-        if self.normal_residues != self.base_normal_residues:
-            self.update_normal_residues = True
-        self.settings_residue_list = list(self.base_normal_residues)
-        self.NormalResidueList.clear()
-        self.AddNormalResidue.setEnabled(False)
-        self.RemoveNormalResidue.setEnabled(False)
-        self.NormalResidueList.addItems(self.settings_residue_list)
+    def change_info(self, index):
+        if self.current_info_type != index:
+            self.update_info = True
 
     def resetModel(self):
-        if not self.ModelSpecialResidues.isChecked():
-            self.ModelSpecialResidues.setChecked(True)
         if not self.ModelResidues.isChecked():
             self.ModelResidues.setChecked(True)
         if self.ModelAtoms.isChecked():
             self.ModelAtoms.setChecked(False)
-        self.update_model = (self.model_special_residues != self.ModelSpecialResidues.isChecked() or self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked())
+        if not self.ModelHetero.isChecked():
+            self.ModelHetero.setChecked(True)
+        if not self.ModelWater.isChecked():
+            self.ModelWater.setChecked(True)
+        self.update_model = (self.model_hetero != self.ModelHetero.isChecked() or self.model_water != self.ModelWater.isChecked() or 
+                             self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked())
         
     def resetFolder(self):
+        self.update_folder = False
         save_script_folder = "No Folder"
         if self.save_script_folder != save_script_folder:
             self.lSaveScriptFolder.setText("No Folder")
@@ -372,39 +332,37 @@ class SettingsMenu(QWidget):
     def resetRun(self):
         self.update_run = (float(self.CommandDelay.getText()) != self.command_delay)
 
+    def resetInfoType(self):
+        self.update_info = False
+        self.InfoType.setCurrentIndex(0)
+        if self.InfoType.currentIndex() != self.current_info_type:
+            self.update_info = True
+
     def applySettings(self, cancel:bool=False):
-        self.update_model = (self.model_special_residues != self.ModelSpecialResidues.isChecked() or self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked())
+        self.update_model = (self.model_hetero != self.ModelHetero.isChecked() or self.model_water != self.ModelWater.isChecked() or 
+                             self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked())
         self.update_nodes = (int(self.NodeTransparencyTitle.getText()) != self.nodes_transparency_title or int(self.NodeTransparencyBackground.getText()) != self.nodes_transparency_background)
         self.update_run = (float(self.CommandDelay.getText()) != self.command_delay)
 
         if cancel:
-            self.settings_residue_list = list(self.normal_residues)
             self.parent_window.settings_button.setProperty("State", "Closed")
             self.hide()
             return
-        
-        updates = False
 
-        if self.update_normal_residues or self.update_model:
-            updates = True
-            if self.update_normal_residues:
-                self.normal_residues = list(self.settings_residue_list)
-                self.update_normal_residues = False
-            if self.update_model:
-                self.model_special_residues = self.ModelSpecialResidues.isChecked()
-                self.model_residues = self.ModelResidues.isChecked()
-                self.model_atoms = self.ModelAtoms.isChecked()
-                self.parent_window.reload_presets()
-                self.update_model = False
+        if self.update_model:
+            self.model_residues = self.ModelResidues.isChecked()
+            self.model_atoms = self.ModelAtoms.isChecked()
+            self.model_hetero = self.ModelHetero.isChecked()
+            self.model_water = self.ModelWater.isChecked()
+            self.parent_window.reload_presets()
+            self.update_model = False
             for picker in self.parent_window.pickers:
                 picker.updateModels(self.parent_window.current_models)
         if self.update_folder:
-            updates = True
             self.save_script_folder = self.lSaveScriptFolder.toPlainText()
             self.save_log_folder = self.lSaveLogFolder.toPlainText()
             self.update_folder = False
         if self.update_nodes:
-            updates = True
             self.nodes_transparency_title = int(self.NodeTransparencyTitle.getText())
             self.nodes_transparency_background = int(self.NodeTransparencyBackground.getText())
             for node in self.parent_window.scene.nodes:
@@ -413,12 +371,13 @@ class SettingsMenu(QWidget):
                     picker.edge.start_socket.node.grNode.updateBrushesAlpha()
             self.update_nodes = False
         if self.update_run:
-            updates = True
             self.command_delay = float(self.CommandDelay.getText())
             self.update_run = False
-
-        if not updates:
-            self.settings_residue_list = list(self.normal_residues)
+        if self.update_info:
+            self.current_info_type = self.InfoType.currentIndex()
+            for node in self.parent_window.scene.nodes:
+                node.set_info(self.current_info_type)
+            self.update_info = False
 
         self.parent_window.settings_button.setProperty("State", "Closed")
         self.hide()

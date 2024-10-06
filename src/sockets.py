@@ -130,13 +130,13 @@ class QDMGraphicsSocket(QGraphicsItem):
                         pen = self._pen_picker
                     else:
                         pen = self._pen_selected
-                    self.setZValue(5)
+                    self.setZValue(95)
                 else:
                     pen = self._pen
-                    self.setZValue(1)
+                    self.setZValue(10)
             else:
                 pen = self._pen
-                self.setZValue(1)
+                self.setZValue(10)
                     
         painter.setPen(pen)
         painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)

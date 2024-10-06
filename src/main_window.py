@@ -71,11 +71,11 @@ class NodeEditor(QWidget):
         self.styles = Stylesheets()
         self.stylesheets = self.styles.styles(_base_path)
         
-        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False, has_input=False, parent=self)
+        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False, parent=self)
         self.nodeEnd = Node(self.session, self.scene, NodeType.End, removable=False, has_output=False, parent=self)
 
         self.nodeStart.setPos(-300,-300)
-        self.nodeEnd.setPos(-200,-200)
+        self.nodeEnd.setPos(-150,-150)
 
         self.editor_layout = QVBoxLayout(self)
 
@@ -314,7 +314,19 @@ class NodeEditor(QWidget):
 
         frames = 0
         connected_nodes = 0
+
         current_node = self.nodeStart
+        while current_node.has_input:
+            if current_node.node_input is not None:
+                if current_node.node_input.hasEdge():
+                    current_node = current_node.node_input.edge.start_socket.node
+                else:
+                    break
+
+        starting_node = current_node
+        node_order_type = f"{starting_node.nodeType.name}"
+        node_order_id = f"{starting_node.nodeID}"
+
         node_frequency = {}
         while current_node is not None:
             connected_nodes += 1
@@ -326,6 +338,8 @@ class NodeEditor(QWidget):
             if current_node.node_output is not None:
                 if current_node.node_output.hasEdge():
                     current_node = current_node.node_output.edge.end_socket.node
+                    node_order_type += f" → {current_node.nodeType.name}"
+                    node_order_id += f" → {current_node.nodeID}"
                 else:
                     current_node = None
             else:
@@ -365,33 +379,13 @@ class NodeEditor(QWidget):
                 summary += "s<br>"
         summary += f"<br>"
         
-        current_node = self.nodeStart
         summary += f"<u><b>Node Order (node type):</u></b><br>"
-        summary += f"{current_node.nodeType.name}"
-        while current_node is not None:
-            if current_node.node_output is not None:
-                if current_node.node_output.hasEdge():
-                    current_node = current_node.node_output.edge.end_socket.node
-                    summary += f" → {current_node.nodeType.name}"
-                else:
-                    current_node = None
-            else:
-                current_node = None
+        summary += f"{node_order_type}"
         summary += f"<br>"
         summary += f"<br>"
 
-        current_node = self.nodeStart
         summary += f"<u><b>Node Order (node ID):</u></b><br>"
-        summary += f"{current_node.nodeID}"
-        while current_node is not None:
-            if current_node.node_output is not None:
-                if current_node.node_output.hasEdge():
-                    current_node = current_node.node_output.edge.end_socket.node
-                    summary += f" → {current_node.nodeID}"
-                else:
-                    current_node = None
-            else:
-                current_node = None
+        summary += f"{node_order_id}"
         summary += f"<br>"
         summary += f"<br>"
         return summary
@@ -399,6 +393,12 @@ class NodeEditor(QWidget):
     def generateViewer(self) -> list[str]:
         do_record = self.nodeStart.content.Record.isChecked()
         current_node = self.nodeStart
+        while current_node.has_input:
+            if current_node.node_input is not None:
+                if current_node.node_input.hasEdge():
+                    current_node = current_node.node_input.edge.start_socket.node
+                else:
+                    break
         start_command = ""
         command = ""
         end_command = ""
@@ -630,11 +630,11 @@ class NodeEditor(QWidget):
 
         self.scene.grScene.clear()
         
-        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False, has_input=False)
+        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False)
         self.nodeEnd = Node(self.session, self.scene, NodeType.End, removable=False, has_output=False)
 
         self.nodeStart.setPos(-300,-300)
-        self.nodeEnd.setPos(-200,-200)
+        self.nodeEnd.setPos(-150,-150)
 
         self.scene.grScene.update()
 

@@ -4,6 +4,8 @@ from PyQt6.QtCore import *
 from PyQt6.QtCore import QEvent
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
+from itertools import groupby
+from operator import itemgetter
 import re
 import random
 from .stylesheets import *
@@ -350,17 +352,22 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()    
             self.container1 = QWidget()                    
             self.layoutH1T1H1 = QHBoxLayout(self.container1)
+            self.layoutH1T1H1V1 = QVBoxLayout()
+            self.ModelTreeSearch = QLineEdit()
             self.ModelTree = QTreeView()
             self.ModelTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ModelTree.setFixedHeight(200)
-            self.ModelTree.setFixedWidth(130)            
+            self.ModelTree.setFixedWidth(200)            
             self.ModelTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.ModelPicked = QTextEdit()
             self.ModelPicked.setFixedHeight(200)
             self.ModelPicked.setFixedWidth(130)
             self.ModelPicked.setReadOnly(True)
-            self.layoutH1T1H1.addWidget(self.ModelTree)
+            self.layoutH1T1H1V1.addWidget(self.ModelTreeSearch)
+            self.layoutH1T1H1V1.addWidget(self.ModelTree)
+            self.layoutH1T1H1.addLayout(self.layoutH1T1H1V1)
             self.layoutH1T1H1.addWidget(self.ModelPicked)
             self.Tab.insertTab(0, self.container1, "Models")
             self.Tab.currentChanged.connect(self.updateTab)
@@ -369,13 +376,16 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()    
             self.container1 = QWidget()   
             self.layoutH1T1H1 = QHBoxLayout(self.container1)
-            self.layoutH1T1V1 = QVBoxLayout()
+            self.layoutH1T1H1V1 = QVBoxLayout()
+            self.ModelTreeSearch = QLineEdit()
             self.ModelTree = QTreeView()
             self.ModelTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ModelTree.setFixedHeight(200)
-            self.ModelTree.setFixedWidth(130)
+            self.ModelTree.setFixedWidth(200)
             self.ModelTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
+            self.layoutH1T1H1V2 = QVBoxLayout()
             self.ModelPicked = QListView()
             self.ModelPickedModel = QStandardItemModel()
             self.ModelPicked.setModel(self.ModelPickedModel)
@@ -387,10 +397,12 @@ class QTreeViewSelector(QWidget):
             self.ModelGroup.setReadOnly(True)
             self.ModelGroup.setFixedHeight(100)
             self.ModelGroup.setFixedWidth(130)
-            self.layoutH1T1V1.addWidget(self.ModelPicked)
-            self.layoutH1T1V1.addWidget(self.ModelGroup)
-            self.layoutH1T1H1.addWidget(self.ModelTree)
-            self.layoutH1T1H1.addLayout(self.layoutH1T1V1)
+            self.layoutH1T1H1V1.addWidget(self.ModelTreeSearch)
+            self.layoutH1T1H1V1.addWidget(self.ModelTree)
+            self.layoutH1T1H1V2.addWidget(self.ModelPicked)
+            self.layoutH1T1H1V2.addWidget(self.ModelGroup)
+            self.layoutH1T1H1.addLayout(self.layoutH1T1H1V1)
+            self.layoutH1T1H1.addLayout(self.layoutH1T1H1V2)
             self.Tab.insertTab(0, self.container1, "Models")
             self.Tab.currentChanged.connect(self.updateTab)
             self.layoutH1.addWidget(self.Tab)
@@ -398,13 +410,17 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()    
             self.container1 = QWidget()   
             self.layoutH1T1V1 = QVBoxLayout(self.container1)
+            self.ModelTreeSearch = QLineEdit()
             self.ModelTree = QTreeView()
             self.ModelTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ModelTree.setFixedHeight(200)
+            self.ModelTree.setFixedWidth(200)  
             self.ModelTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.ModelPicked = QLineEdit()
             self.ModelPicked.setReadOnly(True)
+            self.layoutH1T1V1.addWidget(self.ModelTreeSearch)
             self.layoutH1T1V1.addWidget(self.ModelTree)
             self.layoutH1T1V1.addWidget(self.ModelPicked)
             self.Tab.insertTab(0, self.container1, "Models")
@@ -414,30 +430,40 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()
             self.container1 = QWidget()            
             self.layoutH1T1H1 = QHBoxLayout(self.container1)
+            self.layoutH1T1H1V1 = QVBoxLayout()
+            self.ModelTreeSearch = QLineEdit()
             self.ModelTree = QTreeView()
             self.ModelTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ModelTree.setFixedHeight(200)
-            self.ModelTree.setFixedWidth(130)
+            self.ModelTree.setFixedWidth(200)
             self.ModelTreeModel = QStandardItemModel()
             self.container2 = QWidget()            
             self.layoutH1T2H1 = QHBoxLayout(self.container2)
+            self.layoutH1T2H1V1 = QVBoxLayout()
+            self.ViewTreeSearch = QLineEdit()
             self.ViewTree = QTreeView()
             self.ViewTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ViewTree.setFixedHeight(200)
-            self.ViewTree.setFixedWidth(130)
+            self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
+            self.ViewTreeSearch.textChanged.connect(self.searchViewTree)
             self.ModelPicked = QTextEdit()
             self.ModelPicked.setFixedHeight(200)
             self.ModelPicked.setFixedWidth(130)
             self.ModelPicked.setReadOnly(True)
-            self.layoutH1T1H1.addWidget(self.ModelTree)
+            self.layoutH1T1H1V1.addWidget(self.ModelTreeSearch)
+            self.layoutH1T1H1V1.addWidget(self.ModelTree)
+            self.layoutH1T1H1.addLayout(self.layoutH1T1H1V1)
             self.layoutH1T1H1.addWidget(self.ModelPicked)
             self.ViewPicked = QTextEdit()
             self.ViewPicked.setFixedHeight(200)
             self.ViewPicked.setFixedWidth(130)
             self.ViewPicked.setReadOnly(True)
-            self.layoutH1T2H1.addWidget(self.ViewTree)
+            self.layoutH1T2H1V1.addWidget(self.ViewTreeSearch)
+            self.layoutH1T2H1V1.addWidget(self.ViewTree)
+            self.layoutH1T2H1.addLayout(self.layoutH1T2H1V1)
             self.layoutH1T2H1.addWidget(self.ViewPicked)
             self.Tab.insertTab(0, self.container1, "Models")
             self.Tab.insertTab(1, self.container2, "Views")  
@@ -447,19 +473,24 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()    
             self.container1 = QWidget()      
             self.layoutH1T1 = QHBoxLayout(self.container1)
+            self.layoutH1T1H1V1 = QVBoxLayout()
+            self.ViewTreeSearch = QLineEdit()
             self.ViewTree = QTreeView()
             self.ViewTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ViewTree.setFixedHeight(200)
-            self.ViewTree.setFixedWidth(130)
+            self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ViewTreeSearch.textChanged.connect(self.searchViewTree)
             self.ViewPicked = QListView()
             self.ViewPickedModel = QStandardItemModel()
             self.ViewPicked.setModel(self.ViewPickedModel)
             self.ViewPicked.setFixedHeight(200)
             self.ViewPicked.setFixedWidth(130)
             self.ViewPicked.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-            self.layoutH1T1.addWidget(self.ViewTree)
+            self.layoutH1T1H1V1.addWidget(self.ViewTreeSearch)
+            self.layoutH1T1H1V1.addWidget(self.ViewTree)
+            self.layoutH1T1.addLayout(self.layoutH1T1H1V1)
             self.layoutH1T1.addWidget(self.ViewPicked)
             self.Tab.insertTab(0, self.container1, "Views")
             self.Tab.currentChanged.connect(self.updateTab)     
@@ -468,56 +499,76 @@ class QTreeViewSelector(QWidget):
             self.Tab = QTabWidget()
             self.container1 = QWidget()            
             self.layoutH1T1H1 = QHBoxLayout(self.container1)
+            self.layoutH1T1H1V1 = QVBoxLayout()
+            self.ModelTreeSearch = QLineEdit()
             self.ModelTree = QTreeView()
             self.ModelTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ModelTree.setFixedHeight(200)
-            self.ModelTree.setFixedWidth(130)
+            self.ModelTree.setFixedWidth(200)
             self.ModelTreeModel = QStandardItemModel()
             self.container2 = QWidget()            
             self.layoutH1T2H1 = QHBoxLayout(self.container2)
+            self.layoutH1T2H1V1 = QVBoxLayout()
+            self.Label2DTreeSearch = QLineEdit()
             self.Label2DTree = QTreeView()
             self.Label2DTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.Label2DTree.setFixedHeight(200)
-            self.Label2DTree.setFixedWidth(130)
+            self.Label2DTree.setFixedWidth(200)
             self.Label2DTreeModel = QStandardItemModel()
             self.container3 = QWidget()            
             self.layoutH1T3H1 = QHBoxLayout(self.container3)
+            self.layoutH1T3H1V1 = QVBoxLayout()
+            self.Label3DTreeSearch = QLineEdit()
             self.Label3DTree = QTreeView()
             self.Label3DTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.Label3DTree.setFixedHeight(200)
-            self.Label3DTree.setFixedWidth(130)
+            self.Label3DTree.setFixedWidth(200)
             self.Label3DTreeModel = QStandardItemModel()
             self.container4 = QWidget()            
             self.layoutH1T4H1 = QHBoxLayout(self.container4)
+            self.layoutH1T4H1V1 = QVBoxLayout()
+            self.ViewTreeSearch = QLineEdit()
             self.ViewTree = QTreeView()
             self.ViewTree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             self.ViewTree.setFixedHeight(200)
-            self.ViewTree.setFixedWidth(130)
+            self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
             self.updateModels(self.scene.parent.current_models)
+            self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
+            self.Label2DTreeSearch.textChanged.connect(self.searchLabel2DTree)
+            self.Label3DTreeSearch.textChanged.connect(self.searchLabel3DTree)
+            self.ViewTreeSearch.textChanged.connect(self.searchViewTree)
             self.ModelPicked = QTextEdit()
             self.ModelPicked.setFixedHeight(200)
             self.ModelPicked.setFixedWidth(130)
             self.ModelPicked.setReadOnly(True)
-            self.layoutH1T1H1.addWidget(self.ModelTree)
+            self.layoutH1T1H1V1.addWidget(self.ModelTreeSearch)
+            self.layoutH1T1H1V1.addWidget(self.ModelTree)
+            self.layoutH1T1H1.addLayout(self.layoutH1T1H1V1)
             self.layoutH1T1H1.addWidget(self.ModelPicked)
             self.Label2DPicked = QTextEdit()
             self.Label2DPicked.setFixedHeight(200)
             self.Label2DPicked.setFixedWidth(130)
             self.Label2DPicked.setReadOnly(True)
-            self.layoutH1T2H1.addWidget(self.Label2DTree)
+            self.layoutH1T2H1V1.addWidget(self.Label2DTreeSearch)
+            self.layoutH1T2H1V1.addWidget(self.Label2DTree)
+            self.layoutH1T2H1.addLayout(self.layoutH1T2H1V1)
             self.layoutH1T2H1.addWidget(self.Label2DPicked)
             self.Label3DPicked = QTextEdit()
             self.Label3DPicked.setFixedHeight(200)
             self.Label3DPicked.setFixedWidth(130)
             self.Label3DPicked.setReadOnly(True)
-            self.layoutH1T3H1.addWidget(self.Label3DTree)
+            self.layoutH1T3H1V1.addWidget(self.Label3DTreeSearch)
+            self.layoutH1T3H1V1.addWidget(self.Label3DTree)
+            self.layoutH1T3H1.addLayout(self.layoutH1T3H1V1)
             self.layoutH1T3H1.addWidget(self.Label3DPicked)
             self.ViewPicked = QTextEdit()
             self.ViewPicked.setFixedHeight(200)
             self.ViewPicked.setFixedWidth(130)
             self.ViewPicked.setReadOnly(True)
-            self.layoutH1T4H1.addWidget(self.ViewTree)
+            self.layoutH1T4H1V1.addWidget(self.ViewTreeSearch)
+            self.layoutH1T4H1V1.addWidget(self.ViewTree)
+            self.layoutH1T4H1.addLayout(self.layoutH1T4H1V1)
             self.layoutH1T4H1.addWidget(self.ViewPicked)
             self.Tab.insertTab(0, self.container1, "Models")
             self.Tab.insertTab(1, self.container2, "2D labels")
@@ -600,6 +651,29 @@ class QTreeViewSelector(QWidget):
 
         self.updateTab()
 
+    def minimizeSelection(self, selected_list:list[list[str]]):
+        current_list = list(selected_list)
+        filtered_list:list[list[str]] = []
+        for item in selected_list:
+            current_list.remove(item)
+            length = len(item)
+            exists = False
+            for i in range(length):
+                if item[0:i] in current_list:
+                    exists = True
+                    break
+            if not exists:
+                same_length_list = [x for x in current_list if len(x) == len(item)]
+                for ite in same_length_list:
+                    if item != ite:
+                        if item[0:-1] == ite[0:-1]:
+                            item[-1] += f",{ite[-1]}"
+                            current_list.remove(ite)
+                            selected_list.remove(ite)
+                filtered_list.append(item)
+        filtered_list.reverse()
+        return filtered_list
+    
     def updateModel(self) -> list[str]:
         selected_temp = []
         if self.Tab.currentIndex() == 0:
@@ -609,456 +683,119 @@ class QTreeViewSelector(QWidget):
         elif self.Tab.currentIndex() == 2:
             index = self.Label3DTree.selectionModel().selectedIndexes()
 
-        model_list = []
-        chain_list = []
-        residue_list = []
-        atom_list = []
+        selected_list = []
         for i in index:
-            item = i.model().itemFromIndex(i)
+            proxy_index = i.model().mapToSource(i)
+            item:QStandardItem = i.model().sourceModel().itemFromIndex(proxy_index)
             mod = None
             if item.parent() is not None:
                 if item.parent().parent() is not None:
-                    if item.parent().parent().parent() is not None:
-                        if item.parent().text() == "Special Residue":
-                            m = item.parent().parent().parent().text().split("#")[1]
-                            c = item.parent().parent().text().split("-")[0]
-                            res_num = item.text().split(" ")[1]
-                            mod = f"#{m}.{c}:{res_num}"
-                            residue_list.append(mod)
+                    if self.scene.parent.settings_menu.model_residues:
+                        if item.parent().parent().parent() is not None:
+                            if self.scene.parent.settings_menu.model_atoms:
+                                m = item.parent().parent().parent().text().split("#")[1]
+                                c = item.parent().parent().text().split("-")[0]
+                                res_num = item.parent().text().split(" ")[1]
+                                mod = f"#{m},{c}:{res_num}@{item.text()}"
+                                selected_list.append(mod)
                         else:
-                            m = item.parent().parent().parent().text().split("#")[1]
-                            c = item.parent().parent().text().split("-")[0]
-                            res_num = item.parent().text().split(" ")[1]
-                            mod = f"#{m}.{c}:{res_num}@{item.text()}"
-                            atom_list.append(mod)
-                    else:
-                        if item.text() == "Special Residue":
-                            for j in range(item.rowCount()):
+                            if item.parent().parent().text() == "Hetero" or item.parent().parent().text() == "Water":
+                                m = item.parent().text().split("#")[1]
+                                m = m.split(".", 1)
+                                mod = f"#{m[0]},{m[1]}@{item.text()}"
+                                selected_list.append(mod)
+                            else:
                                 m = item.parent().parent().text().split("#")[1]
                                 c = item.parent().text().split("-")[0]
-                                res_num = item.child(j).text().split(" ")[1]
-                                mod = f"#{m}.{c}:{res_num}"
-                                residue_list.append(mod)
-                        elif item.parent().text() == "Special Residue":
-                            m = item.parent().parent().text().split("#")[1]
-                            text = item.text().split(" ")[1]
-                            mod = f"#{m}.{text}"
-                            residue_list.append(mod)
-                        else:
-                            m = item.parent().parent().text().split("#")[1]
-                            c = item.parent().text().split("-")[0]
-                            res_num = item.text().split(" ")[1]
-                            mod = f"#{m}.{c}:{res_num}"
-                            residue_list.append(mod)
+                                res_num = item.text().split(" ")[1]
+                                mod = f"#{m},{c}:{res_num}"
+                                selected_list.append(mod)
                 else:
-                    if item.text() == "Special Residue":
-                        for j in range(item.rowCount()):
-                            m = item.parent().text().split("#")[1]
-                            text = item.child(j).text().split(" ")[1]
-                            mod = f"#{m}.{text}"
-                            residue_list.append(mod)
-                    elif item.parent().text() == "Special Residue":
-                        text = item.text().split(" ")[1]
-                        mod = f"#{text}"
-                        residue_list.append(mod)
+                    if item.parent().text() == "Hetero" or item.parent().text() == "Water":
+                        m = item.text().split("#")[1]
+                        m = m.split(".", 1)
+                        mod = f"#{m[0]},{m[1]}"
+                        selected_list.append(mod)
                     else:
                         m = item.parent().text().split("#")[1]
                         c = item.text().split("-")[0]
-                        mod = f"#{m}.{c}"
-                        chain_list.append(mod)
+                        mod = f"#{m},{c}"
+                        selected_list.append(mod)
             else:
                 if item.text() == "All":
-                    model_list.append(item.text())
-                elif item.text() == "Special Residue":
-                    for j in range(item.rowCount()):
-                        text:str = item.child(j).text().split(" ")[1]
-                        mod = f"#{text}"
-                        residue_list.append(mod)
+                    selected_list.append(item.text())
+                elif item.text() == "Hetero":
+                    for i in range(item.rowCount()):
+                        selected_list.append(item.child(i).text().replace(".", ",", 1))
+                elif item.text() == "Water":
+                    for i in range(item.rowCount()):
+                        selected_list.append(item.child(i).text().replace(".", ",", 1))
                 else:
                     m = item.text().split("#")[1]
                     mod = f"#{m}"
-                    model_list.append(mod)
-        if "All" not in model_list:
-            split_model_list = [re.split("#|\\.|:|@", mod)[1:] for mod in model_list]
-            split_model_list.sort()
-            if self.Tab.currentIndex() == 2:
-                split_chain_list = [re.split("#|\\.|:|@", chain, maxsplit=4)[2:] for chain in chain_list]
-                split_chain_list.sort()
-            else:
-                split_chain_list = [re.split("#|\\.|:|@", chain)[1:] for chain in chain_list]
-                split_chain_list.sort()
-            split_residue_list = [re.split("#|\\.|:|@", residue)[1:] for residue in residue_list]
-            split_residue_list.sort()
-            split_atom_list = [re.split("#|\\.|:|@", atom)[1:] for atom in atom_list]
-            split_atom_list.sort()
-            del model_list, chain_list, residue_list, atom_list
+                    selected_list.append(mod)
 
-            filtered0_model_list = []
-            filtered0_chain_list = []
-            filtered0_residue_list = []
-            filtered0_atom_list = []
-            for mod in split_model_list:
-                filtered0_model_list.append(mod[:])
-            for chain in split_chain_list:
-                exists = False
-                for i, s in enumerate(split_model_list):
-                    if chain[0] == s[0]:
-                        exists = True
-                        break
-                if not exists:
-                    if filtered0_chain_list == []:
-                        filtered0_chain_list.append(chain[:])
-                    else:
-                        for i, s in enumerate(filtered0_chain_list):
-                            if chain[0] == s[0] and chain[1] not in s[1]:
-                                filtered0_chain_list[i][1] += f",{chain[1]}"
-                                exists = True
-                                break
-                            elif chain[0] not in s[0] and chain[1] == s[1]:
-                                filtered0_chain_list[i][0] += f",{chain[0]}"
-                                exists = True
-                                break
-                        if not exists:
-                            filtered0_chain_list.append(chain[:])
-            for residue in split_residue_list:
-                exists = False
-                for i, s in enumerate(split_model_list):
-                    if residue[0] == s[0]:
-                        exists = True
-                        break
-                if not exists:
-                    for i, s in enumerate(split_chain_list):
-                        if residue[0] == s[0] and residue[1] == s[1]:
-                            exists = True
-                            break
-                if not exists:
-                    if filtered0_residue_list == []:
-                        filtered0_residue_list.append(residue[:])
-                    else:
-                        for i, s in enumerate(filtered0_residue_list):
-                            if residue[0] == s[0] and residue[1] == s[1] and residue[2] not in s[2]:
-                                filtered0_residue_list[i][2] += f",{residue[2]}"
-                                exists = True
-                                break
-                            elif residue[0] == s[0] and residue[1] not in s[1] and residue[2] == s[2]:
-                                filtered0_residue_list[i][1] += f",{residue[1]}"
-                                exists = True
-                                break
-                            elif residue[0] not in s[0] and residue[1] == s[1] and residue[2] == s[2]:
-                                filtered0_residue_list[i][0] += f",{residue[0]}"
-                                exists = True
-                                break
-                        if not exists:
-                            filtered0_residue_list.append(residue[:])
-            for atom in split_atom_list:
-                exists = False
-                for i, s in enumerate(split_model_list):
-                    if atom[0] == s[0]:
-                        exists = True
-                        break
-                if not exists:
-                    for i, s in enumerate(split_chain_list):
-                        if atom[0] == s[0] and atom[1] == s[1]:
-                            exists = True
-                            break
-                if not exists:
-                    for i, s in enumerate(split_residue_list):
-                        if atom[0] == s[0] and atom[1] == s[1] and atom[2] == s[2]:
-                            exists = True
-                            break
-                if not exists:
-                    if filtered0_atom_list == []:
-                        filtered0_atom_list.append(atom[:])
-                    else:
-                        for i, s in enumerate(filtered0_atom_list):
-                            if atom[0] == s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] not in s[3]:
-                                filtered0_atom_list[i][3] += f",{atom[3]}"
-                                exists = True
-                                break
-                            elif atom[0] == s[0] and atom[1] == s[1] and atom[2] not in s[2] and atom[3] == s[3]:
-                                filtered0_atom_list[i][2] += f",{atom[2]}"
-                                exists = True
-                                break
-                            elif atom[0] == s[0] and atom[1] not in s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                                filtered0_atom_list[i][1] += f",{atom[1]}"
-                                exists = True
-                                break
-                            elif atom[0] not in s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                                filtered0_atom_list[i][0] += f",{atom[0]}"
-                                exists = True
-                                break
-                        if not exists:
-                            filtered0_atom_list.append(atom[:])
+        if "All" not in selected_list:
+            split_list = [re.split("#|\\,|:|@", mod)[1:] for mod in selected_list]
+            split_list.sort()
+            del selected_list
 
-            filtered1_model_list = []
-            filtered1_chain_list = []
-            filtered1_residue_list = []
-            filtered1_atom_list = []
-
-            for mod in filtered0_model_list:
-                if filtered1_model_list == []:
-                    filtered1_model_list.append(mod)
-                else:
-                    filtered1_model_list[0][0] += f",{mod[0]}"
-            for chain in filtered0_chain_list:
-                if filtered1_chain_list == []:
-                    filtered1_chain_list.append(chain[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered1_chain_list):
-                        if chain[0] == s[0] and chain[1] not in s[1]:
-                            filtered1_chain_list[i][1] += f",{chain[1]}"
-                            exists = True
-                            break
-                        elif chain[0] not in s[0] and chain[1] == s[1]:
-                            filtered1_chain_list[i][0] += f",{chain[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered1_chain_list.append(chain[:])
-            for residue in filtered0_residue_list:
-                if filtered1_residue_list == []:
-                    filtered1_residue_list.append(residue[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered1_residue_list):
-                        if residue[0] == s[0] and residue[1] == s[1] and residue[2] not in s[2]:
-                            filtered1_residue_list[i][2] += f",{residue[2]}"
-                            exists = True
-                            break
-                        elif residue[0] == s[0] and residue[1] not in s[1] and residue[2] == s[2]:
-                            filtered1_residue_list[i][1] += f",{residue[1]}"
-                            exists = True
-                            break
-                        elif residue[0] not in s[0] and residue[1] == s[1] and residue[2] == s[2]:
-                            filtered1_residue_list[i][0] += f",{residue[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered1_residue_list.append(residue[:])
-            for atom in filtered0_atom_list:
-                if filtered1_atom_list == []:
-                    filtered1_atom_list.append(atom[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered1_atom_list):
-                        if atom[0] == s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] not in s[3]:
-                            filtered1_atom_list[i][3] += f",{atom[3]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] == s[1] and atom[2] not in s[2] and atom[3] == s[3]:
-                            filtered1_atom_list[i][2] += f",{atom[2]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] not in s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered1_atom_list[i][1] += f",{atom[1]}"
-                            exists = True
-                            break
-                        elif atom[0] not in s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered1_atom_list[i][0] += f",{atom[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered1_atom_list.append(atom[:])
-                        
-            filtered2_residue_list = []
-            filtered2_atom_list = []
-            for residue in filtered1_residue_list:
-                if filtered2_residue_list == []:
-                    filtered2_residue_list.append(residue[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered2_residue_list):
-                        if residue[0] == s[0] and residue[1] == s[1] and residue[2] not in s[2]:
-                            filtered2_residue_list[i][2] += f",{residue[2]}"
-                            exists = True
-                            break
-                        elif residue[0] == s[0] and residue[1] not in s[1] and residue[2] == s[2]:
-                            filtered2_residue_list[i][1] += f",{residue[1]}"
-                            exists = True
-                            break
-                        elif residue[0] not in s[0] and residue[1] == s[1] and residue[2] == s[2]:
-                            filtered2_residue_list[i][0] += f",{residue[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered2_residue_list.append(residue[:])
-            for atom in filtered1_atom_list:
-                if filtered2_atom_list == []:
-                    filtered2_atom_list.append(atom[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered2_atom_list):
-                        if atom[0] == s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] not in s[3]:
-                            filtered2_atom_list[i][3] += f",{atom[3]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] == s[1] and atom[2] not in s[2] and atom[3] == s[3]:
-                            filtered2_atom_list[i][2] += f",{atom[2]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] not in s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered2_atom_list[i][1] += f",{atom[1]}"
-                            exists = True
-                            break
-                        elif atom[0] not in s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered2_atom_list[i][0] += f",{atom[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered2_atom_list.append(atom[:])
-
-            filtered3_atom_list = []
-            for atom in filtered2_atom_list:
-                if filtered3_atom_list == []:
-                    filtered3_atom_list.append(atom[:])
-                else:
-                    exists = False
-                    for i, s in enumerate(filtered3_atom_list):
-                        if atom[0] == s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] not in s[3]:
-                            filtered3_atom_list[i][3] += f",{atom[3]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] == s[1] and atom[2] not in s[2] and atom[3] == s[3]:
-                            filtered3_atom_list[i][2] += f",{atom[2]}"
-                            exists = True
-                            break
-                        elif atom[0] == s[0] and atom[1] not in s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered3_atom_list[i][1] += f",{atom[1]}"
-                            exists = True
-                            break
-                        elif atom[0] not in s[0] and atom[1] == s[1] and atom[2] == s[2] and atom[3] == s[3]:
-                            filtered3_atom_list[i][0] += f",{atom[0]}"
-                            exists = True
-                            break
-                    if not exists:
-                        filtered3_atom_list.append(atom[:])
-
-            for mol in filtered1_model_list:
-                if all([s.isnumeric() for s in mol[0].split(",")]):
-                    map_model = [int(i) for i in mol[0] .split(",")]
-                    m_num = True
-                else:
-                    map_model = list(map(ord, mol[0].split(",")))
-                    m_num = False
-                map_model.sort()
-                model_ranges = self.get_consecutive_ranges(map_model)
-                if m_num:
-                    model_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in model_ranges]
-                else:
-                    model_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in model_ranges]
-                selected_temp.append(f"#{','.join(model_ranges)}")
-            for mol in filtered1_chain_list:
-                if all([s.isnumeric() for s in mol[0].split(",")]):
-                    map_model = [int(i) for i in mol[0].split(",")]
-                    m_num = True
-                else:
-                    map_model = list(map(ord, mol[0].split(",")))
-                    m_num = False
-                map_model.sort()
-                if all([s.isnumeric() for s in mol[1].split(",")]):
-                    map_chain = [int(i) for i in mol[1].split(",")]
-                    c_num = True
-                else:
-                    map_chain = list(map(ord, mol[1].split(",")))
-                    c_num = False
-                map_chain.sort()
-                model_ranges = self.get_consecutive_ranges(map_model)
-                if m_num:
-                    model_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in model_ranges]
-                else:
-                    model_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in model_ranges]
-                chain_ranges = self.get_consecutive_ranges(map_chain)
-                if c_num:
-                    chain_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in chain_ranges]
-                else:
-                    chain_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in chain_ranges]
-                selected_temp.append(f"#{','.join(model_ranges)}.{','.join(chain_ranges)}")
-            for mol in filtered2_residue_list:
-                if all([s.isnumeric() for s in mol[0].split(",")]):
-                    map_model = [int(i) for i in mol[0].split(",")]
-                    m_num = True
-                else:
-                    map_model = list(map(ord, mol[0].split(",")))
-                    m_num = False
-                map_model.sort()
-                if all([s.isnumeric() for s in mol[1].split(",")]):
-                    map_chain = [int(i) for i in mol[1].split(",")]
-                    c_num = True
-                else:
-                    map_chain = list(map(ord, mol[1].split(",")))
-                    c_num = False
-                map_chain.sort()
-                if all([s.isnumeric() for s in mol[2].split(",")]):
-                    map_redisue = [int(i) for i in mol[2].split(",")]
-                    r_num = True
-                else:
-                    map_redisue = list(map(ord, mol[2].split(",")))
-                    r_num = False
-                map_redisue.sort()
-                model_ranges = self.get_consecutive_ranges(map_model)
-                if m_num:
-                    model_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in model_ranges]
-                else:
-                    model_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in model_ranges]
-                chain_ranges = self.get_consecutive_ranges(map_chain)
-                if c_num:
-                    chain_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in chain_ranges]
-                else:
-                    chain_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in chain_ranges]
-                residue_ranges = self.get_consecutive_ranges(map_redisue)
-                if r_num:
-                    residue_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in residue_ranges]
-                else:
-                    residue_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in residue_ranges]
-                selected_temp.append(f"#{','.join(model_ranges)}.{','.join(chain_ranges)}:{','.join(residue_ranges)}")
-            for mol in filtered3_atom_list:
-                if all([s.isnumeric() for s in mol[0].split(",")]):
-                    map_model = [int(i) for i in mol[0].split(",")]
-                    m_num = True
-                else:
-                    map_model = list(map(ord, mol[0].split(",")))
-                    m_num = False
-                map_model.sort()
-                if all([s.isnumeric() for s in mol[1].split(",")]):
-                    map_chain = [int(i) for i in mol[1].split(",")]
-                    c_num = True
-                else:
-                    map_chain = list(map(ord, mol[1].split(",")))
-                    c_num = False
-                map_chain.sort()
-                if all([s.isnumeric() for s in mol[2].split(",")]):
-                    map_redisue = [int(i) for i in mol[2].split(",")]
-                    r_num = True
-                else:
-                    map_redisue = list(map(ord, mol[2].split(",")))
-                    r_num = False
-                map_redisue.sort()
-                model_ranges = self.get_consecutive_ranges(map_model)
-                if m_num:
-                    model_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in model_ranges]
-                else:
-                    model_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in model_ranges]
-                chain_ranges = self.get_consecutive_ranges(map_chain)
-                if c_num:
-                    chain_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in chain_ranges]
-                else:
-                    chain_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in chain_ranges]
-                residue_ranges = self.get_consecutive_ranges(map_redisue)
-                if r_num:
-                    residue_ranges = [f"{r[0]}-{r[1]}" if r[0] != r[1] else f"{r[0]}" for r in residue_ranges]
-                else:
-                    residue_ranges = [f"{chr(r[0])}-{chr(r[1])}" if r[0] != r[1] else f"{chr(r[0])}" for r in residue_ranges]
-                selected_temp.append(f"#{','.join(model_ranges)}.{','.join(chain_ranges)}:{','.join(residue_ranges)}@{mol[3]}")
+            selected_temp = []
+            split_list.sort(key=len)
+            split_list.reverse()
+            filtered_list = self.minimizeSelection(split_list)
+            selected_temp.extend(self.checkConsecutive(filtered_list))
         else:
             selected_temp = ["All"]
         return selected_temp
-    
+
+    def checkConsecutive(self, filtered:list[str]) -> list[str]:
+        selected = []
+        for molecule in filtered:
+            value = []
+            for mol in molecule:
+                group = []
+                for m in mol.split("."):
+                    group.append(self.groupConsecutive(m))
+                group = ".".join(group)
+                value.append(group)
+            if len(value) == 1:
+                selected.append(f"#{value[0]}")
+            elif len(value) == 2:
+                selected.append(f"#{value[0]}.{value[1]}")
+            elif len(value) == 3:
+                selected.append(f"#{value[0]}.{value[1]}:{value[2]}")
+            elif len(value) == 4:
+                selected.append(f"#{value[0]}.{value[1]}:{value[2]}@{value[3]}")
+        return selected
+
+    def groupConsecutive(self, strings:str):
+        if all(x.isdigit() for x in strings.split(",")):    
+            mol = sorted([int(x) for x in strings.split(",")]) 
+            z = {}
+            value = ""
+            for k, g in groupby(enumerate(mol), lambda ix : ix[0] - ix[1]):
+                group = list(map(itemgetter(1), g))
+                if group[0] !=group[-1]:
+                    if value == "":
+                        value = f"{group[0]}-{group[-1]}"
+                    else:
+                        value += f",{group[0]}-{group[-1]}"
+                else:
+                    if value == "":
+                        value = f"{group[0]}"
+                    else:
+                        value += f",{group[0]}"
+            return value
+        else:
+            return strings
+
     def updateViews(self) -> list[str]:
         selected_temp = []
         index = self.ViewTree.selectionModel().selectedIndexes()
         for i in index:
-            item = i.model().itemFromIndex(i)
+            proxy_index = i.model().mapToSource(i)
+            item = i.model().sourceModel().itemFromIndex(proxy_index)
             selected_temp.append(item.text())
         if "All" in selected_temp:
             selected_temp = ["All"]
@@ -1691,17 +1428,124 @@ class QTreeViewSelector(QWidget):
 
             if hasattr(self.node, "node_output"):
                 self.node.node_output.edge.end_socket.node.content.updateTab(index)
+    
+    def searchModelTree(self, text:str):
+        search = QRegularExpression(text, QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.proxyModelModel.setFilterRegularExpression(search)
 
-    def checkSpecialResidue(self, residue:str) -> bool:
-        if residue in self.scene.parent.settings_menu.normal_residues:
+    def searchLabel2DTree(self, text:str):
+        search = QRegularExpression(text, QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.proxyLabel2DModel.setFilterRegularExpression(search)
+
+    def searchLabel3DTree(self, text:str):
+        search = QRegularExpression(text, QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.proxyLabel3DModel.setFilterRegularExpression(search)
+
+    def searchViewTree(self, text:str):
+        search = QRegularExpression(text, QRegularExpression.PatternOption.CaseInsensitiveOption)
+        self.proxyViewModel.setFilterRegularExpression(search)
+
+    def checkHetero(self, residue:str) -> bool:        
+        not_hetero = ["ALA", "CYS", "ASP", "GLU", "PHE", "GLY", "HIS", "ILE", "LYS", "LEU", "MET", "ASN", "PYL", "PRO", "GLN", "ARG", "SER", "THR", "SEC", "VAL", "TRP", "TYR"]
+        if residue in not_hetero:
             return False
         return True
         
+    def findStructure(self, obj, model:QStandardItemModel, model_item:QStandardItem) -> bool:
+        for struct in obj.child_models():
+            if type(struct) == structure.AtomicStructure:
+                if self.scene.parent.settings_menu.model_atoms:
+                    chains = struct.atoms.by_chain
+                elif self.scene.parent.settings_menu.model_residues:
+                    chains = struct.residues.by_chain
+                else:
+                    chains = struct.chains
+                for chain in chains:
+                    if self.scene.parent.settings_menu.model_atoms or self.scene.parent.settings_menu.model_residues:
+                        current_chain = str(chain[0]).split("#")[1]
+                        chain_id = ".".join(str(x) for x in current_chain.split(".")[1:])
+                        chain_item = QStandardItem(f"{chain_id}-{chain[1]}")
+                    else:                        
+                        current_chain = str(chain).split("#")[1].split("/")
+                        chain_id = ".".join(str(x) for x in current_chain[0].split(".")[1:])
+                        chain_item = QStandardItem(f"{chain_id}-{current_chain[1]}")
+                    model_item.appendRow(chain_item)
+                    if self.scene.parent.settings_menu.model_atoms:
+                        current_residue = ""
+                        for atoms in chain[2]:
+                            atom = str(atoms).split(" ")  
+                            if atom[-3] == "HOH":
+                                current_residue = " ".join(atom[-3:-1])
+                                residue_item = QStandardItem(current_residue)                                
+                                chain_item.appendRow(residue_item)
+                                if self.scene.parent.settings_menu.model_water:
+                                    if self.first_water:
+                                        model.insertRow(0 if self.first_hetero else 1, self.water_residue_item)
+                                        self.first_water = False
+                                    r = atom[-4].split("/")[0]
+                                    self.water_residue_item.appendRow(QStandardItem(f"{atom[-3]} {atom[-2]} {r}:{atom[-2]}"))                   
+                            elif self.checkHetero(atom[-3]):
+                                if current_residue == " ".join(atom[-3:-1]):
+                                    atom_item = QStandardItem(atom[-1])
+                                    residue_item.appendRow(atom_item)
+                                    if self.scene.parent.settings_menu.model_hetero:
+                                        res.appendRow(QStandardItem(f"{atom[-1]}"))
+                                else:
+                                    current_residue = " ".join(atom[-3:-1])
+                                    residue_item = QStandardItem(current_residue)                                
+                                    chain_item.appendRow(residue_item)
+                                    atom_item = QStandardItem(atom[-1])
+                                    residue_item.appendRow(atom_item)
+                                    if self.scene.parent.settings_menu.model_hetero:
+                                        if self.first_hetero:
+                                            model.insertRow(0, self.hetero_residue_item)
+                                            self.first_hetero = False
+                                        r = atom[-4].split("/")[0]
+                                        res = QStandardItem(f"{atom[-3]} {atom[-2]} {r}:{atom[-2]}")
+                                        self.hetero_residue_item.appendRow(res)
+                                        res.appendRow(QStandardItem(f"{atom[-1]}"))
+                            else:
+                                if current_residue == " ".join(atom[-3:-1]):
+                                    if self.scene.parent.settings_menu.model_atoms:
+                                        atom_item = QStandardItem(atom[-1])
+                                        residue_item.appendRow(atom_item)
+                                else:
+                                    current_residue = " ".join(atom[-3:-1])
+                                    residue_item = QStandardItem(current_residue)                                
+                                    chain_item.appendRow(residue_item)
+                                    if self.scene.parent.settings_menu.model_atoms:
+                                        atom_item = QStandardItem(atom[-1])
+                                        residue_item.appendRow(atom_item)
+                    elif self.scene.parent.settings_menu.model_residues:
+                        for residue in chain[2]:
+                            res = str(residue).split(" ")
+                            current_residue = " ".join(res[-2:])
+                            residue_item = QStandardItem(current_residue)                                
+                            chain_item.appendRow(residue_item)
+                            if res[-2] == "HOH":
+                                if self.scene.parent.settings_menu.model_water:
+                                    if self.first_water:
+                                        model.insertRow(0 if self.first_hetero else 1, self.water_residue_item)
+                                        self.first_water = False
+                                    r = res[-3].split("/")[0]
+                                    self.water_residue_item.appendRow(QStandardItem(f"{res[-2]} {res[-1]} {r}:{res[-1]}"))
+                            elif self.checkHetero(res[-2]):
+                                if self.scene.parent.settings_menu.model_hetero:
+                                    if self.first_hetero:
+                                        model.insertRow(0, self.hetero_residue_item)
+                                        self.first_hetero = False
+                                    r = res[-3].split("/")[0]
+                                    self.hetero_residue_item.appendRow(QStandardItem(f"{res[-2]} {res[-1]} {r}:{res[-1]}"))
+            else:
+                self.findStructure(struct, model, model_item)
+
     def generateModels(self, objs:list) -> list[QStandardItemModel]:
         model = QStandardItemModel()
         model.clear()
-        
-        first_special_residue_item:bool = True
+        self.first_hetero = True
+        self.hetero_residue_item = QStandardItem("Hetero")
+        self.first_water = True
+        self.water_residue_item = QStandardItem("Water")
         for obj in objs:
             if type(obj) == structure.AtomicStructure:
                 if obj.id is not None:
@@ -1709,45 +1553,10 @@ class QTreeViewSelector(QWidget):
                         model_item = QStandardItem(f"Model #{int(obj.id[0])}")
                         model.appendRow(model_item)
             elif type(obj) == models.Model:
-                first_special_residue_item_in_model:bool = True
-                model_item = QStandardItem(f"Model #{obj.id[0]}")
-                model.appendRow(model_item)
-                i = 1
-                for struct in obj.child_models():
-                    if type(struct) == structure.AtomicStructure:
-                        for chain in struct.chains:
-                            first_special_residue_item_in_chain:bool = True
-                            chain_item = QStandardItem(f"{i}-{chain.chain_id}")
-                            model_item.appendRow(chain_item)
-                            if self.scene.parent.settings_menu.model_residues:
-                                for residue in chain.residues:
-                                    residue_text = str(residue).split(" ")
-                                    if self.scene.parent.settings_menu.model_special_residues:
-                                        if self.checkSpecialResidue(residue_text[-2]):
-                                            if first_special_residue_item:
-                                                special_residue_item = QStandardItem("Special Residue")
-                                                model.insertRow(0, special_residue_item)
-                                                first_special_residue_item = False
-                                            if first_special_residue_item_in_model:
-                                                special_residue_item_in_model = QStandardItem("Special Residue")
-                                                model_item.insertRow(0, special_residue_item_in_model)
-                                                first_special_residue_item_in_model = False
-                                            if first_special_residue_item_in_chain:
-                                                special_residue_item_in_chain = QStandardItem("Special Residue")
-                                                chain_item.insertRow(0, special_residue_item_in_chain)
-                                                first_special_residue_item_in_chain = False
-                                            special_residue_item.appendRow(QStandardItem(f"{residue_text[-2]} {obj.id[0]}.{i}:{residue_text[-1]}"))
-                                            special_residue_item_in_model.appendRow(QStandardItem(f"{residue_text[-2]} {i}:{residue_text[-1]}"))
-                                            special_residue_item_in_chain.appendRow(QStandardItem(f"{residue_text[-2]} {residue_text[-1]}"))
-                                    residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
-                                    residue_item = QStandardItem(residue_text)
-                                    chain_item.appendRow(residue_item)
-                                    if self.scene.parent.settings_menu.model_atoms:
-                                        for atom in residue.atoms:
-                                            atom_text = str(atom).split(" ")
-                                            atom_item = QStandardItem(atom_text[-1])
-                                            residue_item.appendRow(atom_item)
-                            i += 1
+                if not obj.parent.id:
+                    model_item = QStandardItem(f"Model #{obj.id[0]}")
+                    model.appendRow(model_item)
+                    self.findStructure(obj, model, model_item)
             elif type(obj) == volume.Volume:
                 volume_item = QStandardItem(f"Volume #{obj.id[0]}")
                 model.appendRow(volume_item)
@@ -1772,6 +1581,11 @@ class QTreeViewSelector(QWidget):
         self.label3D_model_list = []
         self.label3D_list = []
 
+        self.first_hetero = True
+        self.hetero_residue_item = QStandardItem("Hetero")
+        self.first_water = True
+        self.water_residue_item = QStandardItem("Water")
+
         for obj in objs:
             if type(obj) == structure.AtomicStructure:
                 if obj.id is not None:
@@ -1779,45 +1593,10 @@ class QTreeViewSelector(QWidget):
                         model_item = QStandardItem(f"Model #{int(obj.id[0])}")
                         model.appendRow(model_item)
             elif type(obj) == models.Model:
-                first_special_residue_item_in_model:bool = True
-                model_item = QStandardItem(f"Model #{obj.id[0]}")
-                model.appendRow(model_item)
-                i = 1
-                for struct in obj.child_models():
-                    if type(struct) == structure.AtomicStructure:
-                        for chain in struct.chains:
-                            first_special_residue_item_in_chain:bool = True
-                            chain_item = QStandardItem(f"{i}-{chain.chain_id}")
-                            model_item.appendRow(chain_item)
-                            if self.scene.parent.settings_menu.model_residues:
-                                for residue in chain.residues:
-                                    residue_text = str(residue).split(" ")
-                                    if self.scene.parent.settings_menu.model_special_residues:
-                                        if self.checkSpecialResidue(residue_text[-2]):
-                                            if first_special_residue_item:
-                                                special_residue_item = QStandardItem("Special Residue")
-                                                model.insertRow(0, special_residue_item)
-                                                first_special_residue_item = False
-                                            if first_special_residue_item_in_model:
-                                                special_residue_item_in_model = QStandardItem("Special Residue")
-                                                model_item.insertRow(0, special_residue_item_in_model)
-                                                first_special_residue_item_in_model = False
-                                            if first_special_residue_item_in_chain:
-                                                special_residue_item_in_chain = QStandardItem("Special Residue")
-                                                chain_item.insertRow(0, special_residue_item_in_chain)
-                                                first_special_residue_item_in_chain = False
-                                            special_residue_item.appendRow(QStandardItem(f"{residue_text[-2]} {obj.id[0]}.{i}:{residue_text[-1]}"))
-                                            special_residue_item_in_model.appendRow(QStandardItem(f"{residue_text[-2]} {i}:{residue_text[-1]}"))
-                                            special_residue_item_in_chain.appendRow(QStandardItem(f"{residue_text[-2]} {residue_text[-1]}"))
-                                    residue_text = f"{residue_text[-2]} {residue_text[-1]}" 
-                                    residue_item = QStandardItem(residue_text)
-                                    chain_item.appendRow(residue_item)
-                                    if self.scene.parent.settings_menu.model_atoms:
-                                        for atom in residue.atoms:
-                                            atom_text = str(atom).split(" ")
-                                            atom_item = QStandardItem(atom_text[-1])
-                                            residue_item.appendRow(atom_item)
-                            i += 1
+                if not obj.parent.id:
+                    model_item = QStandardItem(f"Model #{obj.id[0]}")
+                    model.appendRow(model_item)
+                    self.findStructure(obj, model, model_item)
             elif type(obj) == volume.Volume:
                 volume_item = QStandardItem(f"Volume #{obj.id[0]}")
                 model.appendRow(volume_item)
@@ -1871,8 +1650,11 @@ class QTreeViewSelector(QWidget):
                 self.ModelTreeModel:QStandardItemModel = models_list[0]
                 self.ModelTreeModel.setHorizontalHeaderLabels(["Pick Models"])
                 self.ModelTreeModel.horizontalHeaderItem(0).setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.ModelTreeModel.insertRow(0, QStandardItem("All"))
-                self.ModelTree.setModel(self.ModelTreeModel)
+                self.ModelTreeModel.insertRow(0, QStandardItem("All"))    
+                self.proxyModelModel = QSortFilterProxyModel()
+                self.proxyModelModel.setRecursiveFilteringEnabled(True)
+                self.proxyModelModel.setSourceModel(self.ModelTreeModel)
+                self.ModelTree.setModel(self.proxyModelModel)
                 self.ModelTree.header().setFirstSectionMovable(False)
         elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
             models_list:QStandardItemModel = []
@@ -1896,13 +1678,25 @@ class QTreeViewSelector(QWidget):
                 self.Label3DTreeModel.insertRow(0, QStandardItem("All"))
                 if self.all_views:
                     self.ViewTreeModel.insertRow(0, QStandardItem("All"))
+                self.proxyModelModel = QSortFilterProxyModel()
+                self.proxyModelModel.setRecursiveFilteringEnabled(True)
+                self.proxyModelModel.setSourceModel(self.ModelTreeModel)
                 self.ModelTree.setModel(self.ModelTreeModel)
                 self.ModelTree.header().setFirstSectionMovable(False)
-                self.Label2DTree.setModel(self.Label2DTreeModel)
+                self.proxyLabel2DModel = QSortFilterProxyModel()
+                self.proxyLabel2DModel.setRecursiveFilteringEnabled(True)
+                self.proxyLabel2DModel.setSourceModel(self.Label2DTreeModel)
+                self.Label2DTree.setModel(self.proxyLabel2DModel)
                 self.Label2DTree.header().setFirstSectionMovable(False)
-                self.Label3DTree.setModel(self.Label3DTreeModel)
+                self.proxyLabel3DModel = QSortFilterProxyModel()
+                self.proxyLabel3DModel.setRecursiveFilteringEnabled(True)
+                self.proxyLabel3DModel.setSourceModel(self.Label3DTreeModel)
+                self.Label3DTree.setModel(self.proxyLabel3DModel)
                 self.Label3DTree.header().setFirstSectionMovable(False)
-                self.ViewTree.setModel(self.ViewTreeModel)
+                self.proxyViewModel = QSortFilterProxyModel()
+                self.proxyViewModel.setRecursiveFilteringEnabled(True)
+                self.proxyViewModel.setSourceModel(self.ViewTreeModel)
+                self.ViewTree.setModel(self.proxyViewModel)
                 self.ViewTree.header().setFirstSectionMovable(False)
         elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
             models_list = []
@@ -1918,14 +1712,23 @@ class QTreeViewSelector(QWidget):
                 self.ModelTreeModel.insertRow(0, QStandardItem("All"))
                 if self.all_views:
                     self.ViewTreeModel.insertRow(0, QStandardItem("All"))
+                self.proxyModelModel = QSortFilterProxyModel()
+                self.proxyModelModel.setRecursiveFilteringEnabled(True)
+                self.proxyModelModel.setSourceModel(self.ModelTreeModel)
                 self.ModelTree.setModel(self.ModelTreeModel)
                 self.ModelTree.header().setFirstSectionMovable(False)
+                self.proxyViewModel = QSortFilterProxyModel()
+                self.proxyViewModel.setRecursiveFilteringEnabled(True)
+                self.proxyViewModel.setSourceModel(self.ViewTreeModel)
                 self.ViewTree.setModel(self.ViewTreeModel)
                 self.ViewTree.header().setFirstSectionMovable(False)
         elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
             models_list = []
             if models is not None:
                 models_list += self.generateViews(models[1])
+                self.proxyViewModel = QSortFilterProxyModel()
+                self.proxyViewModel.setRecursiveFilteringEnabled(True)
+                self.proxyViewModel.setSourceModel(self.ViewTreeModel)
                 self.ViewTreeModel:QStandardItemModel = models_list[0]
                 self.ViewTreeModel.setHorizontalHeaderLabels(["Pick View"])
                 self.ViewTreeModel.horizontalHeaderItem(0).setTextAlignment(Qt.AlignmentFlag.AlignCenter)

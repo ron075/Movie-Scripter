@@ -127,7 +127,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         else:
             self.arrow_offset = 7
 
-        self.setZValue(-1)
+        self.setZValue(0)
 
         self.initUI()
 
@@ -145,26 +145,29 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         if not self.edge.is_deleting:
-
             if self.edge.start_socket is not None and self.edge.end_socket is not None:
                 if NodeType(self.edge.start_socket.node.nodeType) == NodeType.Picker:
                     pen = self._pen_picker
+                    if self.edge.start_socket.node.grNode.isSelected() or self.edge.end_socket.node.grNode.isSelected() or self.isSelected():
+                        self.setZValue(90)
+                    else:
+                        self.setZValue(0)
                 elif self.isSelected():
                     pen = self._pen_selected
-                    self.setZValue(1)
+                    self.setZValue(90)
                 else:
                     if self.edge.start_socket.node.grNode.isSelected():
                         pen = self._pen_output
-                        self.setZValue(1)
+                        self.setZValue(90)
                     elif self.edge.end_socket.node.grNode.isSelected():
                         pen = self._pen_input
-                        self.setZValue(1)
+                        self.setZValue(90)
                     else:
                         pen = self._pen_default
-                        self.setZValue(-1)
+                        self.setZValue(0)
             else:
                 pen = self._pen_default
-                self.setZValue(-1)
+                self.setZValue(0)
             painter.setPen(pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
 
