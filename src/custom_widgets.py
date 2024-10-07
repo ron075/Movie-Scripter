@@ -652,6 +652,7 @@ class QTreeViewSelector(QWidget):
         self.updateTab()
 
     def minimizeSelection(self, selected_list:list[list[str]]):
+        start_list = list(selected_list)
         current_list = list(selected_list)
         filtered_list:list[list[str]] = []
         for item in selected_list:
@@ -666,13 +667,47 @@ class QTreeViewSelector(QWidget):
                 same_length_list = [x for x in current_list if len(x) == len(item)]
                 for ite in same_length_list:
                     if item != ite:
-                        if item[0:-1] == ite[0:-1]:
-                            item[-1] += f",{ite[-1]}"
+                        new_item = self.minimizeItem(item, ite)
+                        if new_item != item:
+                            item = new_item
                             current_list.remove(ite)
                             selected_list.remove(ite)
                 filtered_list.append(item)
         filtered_list.reverse()
+        filtered_list.sort()
+        if filtered_list != start_list:
+            filtered_list = self.minimizeSelection(filtered_list)
         return filtered_list
+    
+    def minimizeItem(self, item:list[str], ite:list[str]) -> list[str]:
+        new_item = list(item)
+        item_length = len(item)
+        if item_length == 1:
+            new_item[0] += f",{ite[0]}"
+        elif item_length > 1:
+            for i in range(item_length):
+                poped_item = item.pop(i)
+                poped_ite = ite.pop(i)
+                if item == ite and poped_item != poped_ite:
+                    split_poped_item = poped_item.split(".")
+                    new_split_poped_item = list(split_poped_item)
+                    split_poped_ite = poped_ite.split(".")
+                    split_item_length = len(split_poped_item)
+                    if split_item_length == 1:
+                        new_item[i] += f",{poped_ite}"
+                    elif split_item_length > 1:
+                        for j in range(split_item_length):
+                            poped_split_poped_item = split_poped_item.pop(j)
+                            poped_split_poped_ite = split_poped_ite.pop(j)
+                            if split_poped_item == split_poped_ite and poped_split_poped_item != poped_split_poped_ite:
+                                new_split_poped_item[j] += f",{poped_split_poped_ite}"
+                                new_item[i] = ".".join(new_split_poped_item)
+                            split_poped_item.insert(j, poped_split_poped_item)
+                            split_poped_ite.insert(j, poped_split_poped_ite)
+                item.insert(i, poped_item)
+                ite.insert(i, poped_ite)
+        return new_item
+
     
     def updateModel(self) -> list[str]:
         selected_temp = []
