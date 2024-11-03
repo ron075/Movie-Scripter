@@ -25,21 +25,10 @@ DONE:
 	Added info buttons to nodes with tooltip styling and formal and simple help string (formal is from the site, simple is something i wrote) - Done
 	Start node was renamed to "Record" and can get an input now. all nodes that come before it will be applied before the recording starts - Done	
 	End node was renamed to "Finish"  - Done
-
-
-TODO:
-Check why run chain not being enabled in simple mode
-Check weird functionality in pick, copy and paste buttons in pickers
-
-Add Volume picker
-Make sure command works on volumes
-
-Add moving subunits preset 
-
-Test it with volumes
-
-Add volumes to the model selction
-
-Decide if I want to move the markers into a markers tab instead of models tab
-
-
+	Check why run chain not being enabled in simple mode - Done
+	Check weird functionality in pick, copy and paste buttons in pickers - Done
+	Model selection now shows volume  - Done
+	Run and Run Chain fixed  - Done
+	Run and Run Chain fixed  - Done
+	Add Volume picker - Done
+	Make sure command works on volumes - Done

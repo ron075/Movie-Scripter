@@ -5,6 +5,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtGui import *
 from sys import platform
+from .util import *    
 from .custom_widgets import *    
 from .enum_classes import * 
 from .node_base import * 
@@ -34,7 +35,6 @@ class SimpleNodeStart(NodeBase):
         self.layoutH1 = QHBoxLayout()
         self.lRecord = QLabel("Record Movie")
         self.Record = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Record)
         self.layoutH1.addWidget(self.lRecord)
         self.layoutH1.addWidget(self.Record, alignment=Qt.AlignmentFlag.AlignLeft, stretch=1)
 
@@ -48,11 +48,11 @@ class SimpleNodeStart(NodeBase):
 
         self.Height = QNumEdit(min=0, max=2160, step=1, decimals=0, addSlider=True, label="Height")
         self.Height.setText("1024")
-        self.Height.setEnabled(False)
+        changeEnabled(self.Height, False) 
 
         self.Width = QNumEdit(min=0, max=4096, step=1, decimals=0, addSlider=True, label="Height")
         self.Width.setText("1280")
-        self.Width.setEnabled(False)
+        changeEnabled(self.Width, False) 
 
         self.layoutH3 = QHBoxLayout()
         self.BackgroundColor = QPushButton("Change Background\nColor") 
@@ -109,29 +109,24 @@ class SimpleNodeStart(NodeBase):
         return [self.start_script_string, self.script_string, self.end_script_string]
     
     def updateResolution(self):
-        if self.Resolution.currentText() == "1280p":
-            self.Height.setText("1024")
-            self.Width.setText("1280")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "720p":
-            self.Height.setText("720")
-            self.Width.setText("1280")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "480p":
-            self.Height.setText("480")
-            self.Width.setText("640")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "360p":
-            self.Height.setText("360")
-            self.Width.setText("640")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "Custom":
-            self.Height.setEnabled(True)
-            self.Width.setEnabled(True)
+        if self.Resolution.currentText() == "Custom":
+            changeEnabled(self.Height, True) 
+            changeEnabled(self.Width, True) 
+        else:
+            changeEnabled(self.Height, False) 
+            changeEnabled(self.Width, False) 
+            if self.Resolution.currentText() == "1280p":
+                self.Height.setText("1024")
+                self.Width.setText("1280")
+            elif self.Resolution.currentText() == "720p":
+                self.Height.setText("720")
+                self.Width.setText("1280")
+            elif self.Resolution.currentText() == "480p":
+                self.Height.setText("480")
+                self.Width.setText("640")
+            elif self.Resolution.currentText() == "360p":
+                self.Height.setText("360")
+                self.Width.setText("640")
 
     def changeBackgroundColor(self):
         self.BackgroundColorPicked = self.ColorDialog.getColor()
@@ -155,8 +150,6 @@ class SimpleNodePicker(NodeBase):
             title = "Fly Picker"
         elif self.selector_type == NodePickerType.DeletePicker:
             title = "Delete Picker"
-        elif self.selector_type == NodePickerType.SplitPicker:
-            title = "Split Picker"
             
         super().__init__(session, summary, title, simple_node=True, parent=parent)
 
@@ -223,7 +216,7 @@ class SimpleNodeColorPalette(NodeBase):
         self.layoutH3 = QHBoxLayout()
         self.Group = QComboBox()
         self.Group.currentIndexChanged.connect(self.groupChange)
-        self.Group.setEnabled(False)  
+        changeEnabled(self.Group, False) 
         self.layoutH3.addWidget(self.Group, alignment=Qt.AlignmentFlag.AlignCenter)  
 
         self.Color.currentIndexChanged.connect(self.switchColors)
@@ -233,7 +226,7 @@ class SimpleNodeColorPalette(NodeBase):
         self.GroupColor = QPushButton("Change Color") 
         self.GroupColor.setFixedWidth(100)   
         self.GroupColor.clicked.connect(self.changeGroupColor)
-        self.GroupColor.setEnabled(False)
+        changeEnabled(self.GroupColor, False) 
         self.ColorLabel = QLabel()
         self.ColorLabel.setFixedWidth(50)   
         self.ColorLabel.setFixedHeight(50)    
@@ -248,11 +241,11 @@ class SimpleNodeColorPalette(NodeBase):
         self.Delete.clicked.connect(self.deleteNode)
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH5.addWidget(self.Delete)
         self.layoutH5.addWidget(self.Run)
@@ -268,11 +261,11 @@ class SimpleNodeColorPalette(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.picker_color_groups != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:            
             self.ColorLabel.setStyleSheet("QLabel { background-color : transparent; border: 1px solid black}")
             self.Group.setCurrentText("")
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -317,12 +310,12 @@ class SimpleNodeColorPalette(NodeBase):
     def generateColors(self):
         if self.summary.picker_color_groups != []:
             if self.Color.currentText() == "From Palette":
-                self.Group.setEnabled(True)
-                self.GroupColor.setEnabled(True)
+                changeEnabled(self.Group, True) 
+                changeEnabled(self.GroupColor, True) 
                 self.group_colors = self.ColorMap.get_colors(self.CustomColor.currentText(), len(self.summary.picker_color_groups), False)
             else:
-                self.Group.setEnabled(False)
-                self.GroupColor.setEnabled(False)
+                changeEnabled(self.Group, False) 
+                changeEnabled(self.GroupColor, False) 
                 self.group_colors = [self.Color.currentText()] * len(self.summary.picker_color_groups)
 
     def addGroup(self):
@@ -337,7 +330,7 @@ class SimpleNodeColorPalette(NodeBase):
         self.generateColors()
         self.switchGroup()
 
-    def removeGroup(self, row_indexes):
+    def removeGroup(self, row_indexes:list):
         self.updateUsedColors()
         self.generateGroups()
         self.generateColors()
@@ -385,6 +378,10 @@ class SimpleNodeTransparency(NodeBase):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.main_layout)
 
+        self.Models = QNumEdit(min=0, max=100, step=1, decimals=0, label="Models", addSlider=True)
+        self.Models.setText("0")
+        self.Models.Slider.valueChanged.connect(self.updateMin)
+
         self.Surfaces = QNumEdit(min=0, max=100, step=1, decimals=0, label="Surfaces", addSlider=True)
         self.Surfaces.setText("0")
 
@@ -412,28 +409,34 @@ class SimpleNodeTransparency(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
         self.layoutH2.addWidget(self.RunChain)
 
+        self.main_layout.addLayout(self.Models.widget_layout)
         self.main_layout.addLayout(self.Surfaces.widget_layout)
         self.main_layout.addLayout(self.Cartoons.widget_layout)
         self.main_layout.addLayout(self.Atoms.widget_layout)
         self.main_layout.addLayout(self.layoutH1)
         self.main_layout.addLayout(self.layoutH2)
 
+    def updateMin(self, min:int):
+        self.Surfaces.setMin(min)
+        self.Cartoons.setMin(min)
+        self.Atoms.setMin(min)
+
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.picker_model != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False)
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -451,9 +454,14 @@ class SimpleNodeTransparency(NodeBase):
             else:
                 objects = f"<i>'{objects}'</i>"
 
-            if int(self.Surfaces.getText()) >= 100 and int(self.Cartoons.getText()) >= 100 and int(self.Atoms.getText()) >= 100:
-                self.script_string += f"hide <i>'{objects}'</i> target scabp<br>"
+            if int(self.Models.getText()) >= 100 and int(self.Surfaces.getText()) >= 100 and int(self.Cartoons.getText()) >= 100 and int(self.Atoms.getText()) >= 100:
+                self.script_string += f"hide <i>'{objects}'</i> target mscabp<br>"
             else:
+                if int(self.Models.getText()) < 100:
+                    self.script_string += f"show <i>'{objects}'</i> target m<br>"
+                    self.script_string += f"transparency <i>'{objects}'</i> {self.Models.getText()} target m<br>"
+                else:
+                    self.script_string += f"hide <i>'{objects}'</i> target m<br>"
                 if int(self.Surfaces.getText()) < 100:
                     self.script_string += f"show <i>'{objects}'</i> target s<br>"
                     self.script_string += f"transparency <i>'{objects}'</i> {self.Surfaces.getText()} target s<br>"
@@ -477,11 +485,11 @@ class SimpleNodeTransparency(NodeBase):
 
     def updateAtomStyle(self):
         if int(self.Atoms.getText()) >= 100:
-            self.AtomsStyle.setEnabled(False)
+            changeEnabled(self.AtomsStyle, False)
         else:
-            self.AtomsStyle.setEnabled(True)
+            changeEnabled(self.AtomsStyle, True)
 
-class SimpleNodeRotation(NodeBase):
+class SimpleNodeTurn(NodeBase):
     def __init__(self, session, summary:SimpleNodeSummary, title:str="", parent=None):
         super().__init__(session, summary, title, simple_node=True, parent=parent)
 
@@ -513,11 +521,11 @@ class SimpleNodeRotation(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
@@ -531,9 +539,9 @@ class SimpleNodeRotation(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.picker_model != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False)
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -553,13 +561,13 @@ class SimpleNodeRotation(NodeBase):
             else:
                 if center_object == "All":
                     center_object = "all"
-                center = f"center {center_object}"
+                center = f"center {center_object} "
 
             objects = "".join(self.summary.picker_model)
             if objects == "All":
                 objects = f"<i>'{objects.lower()}'</i>"
             else:
-                objects = f"<i>'{objects}'</i>"
+                objects = f"models <i>'{objects}'</i>"
 
             self.script_string += f"turn {self.Axis.currentText().lower()} {self.Angle.getText()} {self.Frames.getText()} {center}{objects}<br>"
             self.script_string += f"<br>"
@@ -588,7 +596,7 @@ class SimpleNodeWait(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH1.addWidget(self.Delete)
         self.layoutH1.addWidget(self.RunChain)
@@ -642,7 +650,6 @@ class SimpleNodeDelete(NodeBase):
         self.lAttachedHyds.setWordWrap(True)
         self.lAttachedHyds.setFixedHeight(40)
         self.AttachedHyds = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.AttachedHyds)
         self.layoutH2.addWidget(self.lAttachedHyds, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH2.addWidget(self.AttachedHyds, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -652,7 +659,7 @@ class SimpleNodeDelete(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)
         self.Run.clicked.connect(self.startRunCommand)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
@@ -664,9 +671,9 @@ class SimpleNodeDelete(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.picker_delete != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False)
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -677,20 +684,12 @@ class SimpleNodeDelete(NodeBase):
         if self.current_type == 0:
             self.Type.addItems(["Atoms", "Residues", "Models", "Bonds", "Pseudobonds"])
             self.Type.setCurrentIndex(0)
-            self.Type.setEnabled(True)
-            self.AttachedHyds.setEnabled(True)
-        elif self.current_type == 1:
+            changeEnabled(self.Type, True)
+            changeEnabled(self.AttachedHyds, True)
+        elif self.current_type == 1 or self.current_type == 2 or self.current_type == 3:
             self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
-        elif self.current_type == 2:
-            self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
-        elif self.current_type == 3:
-            self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
+            changeEnabled(self.Type, False)
+            changeEnabled(self.AttachedHyds, False)
 
     def updateCommand(self) -> list[str]:
         super().updateCommand()
@@ -741,7 +740,7 @@ class SimpleNodeSplit(NodeBase):
         self.setLayout(self.main_layout)
 
         self.Model = QComboBox()
-        self.Model.addItems(["Chains", "Ligands", "Connected", "Atoms"])
+        self.Model.addItems(["Chains", "Ligands", "Connected"])
 
         self.layoutH2 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
@@ -749,7 +748,7 @@ class SimpleNodeSplit(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)
         self.Run.clicked.connect(self.startRunCommand)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
@@ -760,9 +759,9 @@ class SimpleNodeSplit(NodeBase):
     def updateRun(self, chain_update:bool=False): 
         current_run = self.Run.isEnabled()  
         if self.summary.picker_model != []: 
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)
         else:
-            self.Run.setEnabled(False)   
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode() 
@@ -820,7 +819,6 @@ class SimpleNodeEnd(NodeBase):
         self.layoutH3V1 = QVBoxLayout()
         self.lRoundtrip = QLabel("Roundtrip")
         self.Roundtrip = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Roundtrip)
         self.layoutH3V2 = QVBoxLayout()
         self.lFormat = QLabel("Format")
         self.Format = QComboBox()
@@ -956,7 +954,7 @@ class SimpleNodeSummary(QWidget):
                 self.lTotalFrames = QLabel(f"Total Frames: {self.total_frames}")
                 self.layoutH2.addWidget(self.lTotalFrames, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH3 = QHBoxLayout()
-                self.lLength = QLabel(f"Length: {self.convertTime(0)}")
+                self.lLength = QLabel(f"Length: {convertTime(0)}")
                 self.layoutH3.addWidget(self.lLength, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.main_layout.addLayout(self.layoutH2)
                 self.main_layout.addLayout(self.layoutH3)
@@ -1006,7 +1004,7 @@ class SimpleNodeSummary(QWidget):
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -1060,7 +1058,7 @@ class SimpleNodeSummary(QWidget):
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -1108,7 +1106,7 @@ class SimpleNodeSummary(QWidget):
         if no_outputs:
             self.updateChainRun()
 
-    def updateChainRun(self, run_enabled:bool=True):
+    def updateChainRun(self, run_enabled:bool=True) -> bool:
         if run_enabled:
             if hasattr(self.node.content, "Run"):
                 run_enabled = self.node.content.Run.isEnabled()
@@ -1116,7 +1114,7 @@ class SimpleNodeSummary(QWidget):
             if self.node.node_input.hasEdge():
                 run_enabled = self.node.node_input.edge.start_socket.node.summary.updateChainRun(run_enabled)
         if hasattr(self.node.content, "RunChain"):
-            self.node.content.RunChain.setEnabled(run_enabled)
+            changeEnabled(self.node.content.RunChain, run_enabled)
         return run_enabled
     
     def resetOutputValues(self, reset_frames:bool=True):
@@ -1130,7 +1128,7 @@ class SimpleNodeSummary(QWidget):
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -1160,26 +1158,3 @@ class SimpleNodeSummary(QWidget):
                 self.node.node_output.edge.end_socket.node.summary.resetOutputValues(reset_frames)
         if no_output:
             self.updateChainRun()
-
-    def convertTime(self, value:int|float) -> str:
-        if value < 60:
-            return(f"{format(round(value, 2), '.2f')} Seconds")
-        else:
-            value = value / 60
-            if value < 60:
-                return(f"{format(round(value, 2), '.2f')} Minutes")
-            else:
-                value = value / 60
-                if value < 24:
-                    return(f"{format(round(value, 2), '.2f')} Hours")
-                else:
-                    value = value / 24
-                    if value < 7:
-                        return(f"{format(round(value, 2), '.2f')} Days")
-                    else:
-                        value = value / 7
-                        if value < 52.177457:
-                            return(f"{format(round(value, 2), '.2f')} Weeks")
-                        else:
-                            value = value / 52.177457
-                            return(f"{format(round(value, 2), '.2f')} Years")

@@ -130,16 +130,27 @@ class MovieMaker(ToolInstance):
                     data["content.MoveX"] = node.MoveX.Text.text()
                     data["content.MoveY"] = node.MoveY.Text.text()
                     data["content.MoveZ"] = node.MoveZ.Text.text()
-                elif NodeType(item.nodeType) == NodeType.Rotation:
+                elif NodeType(item.nodeType) == NodeType.Turn:
                     data["content.Axis"] = node.Axis.currentIndex()
                     data["content.Angle"] = node.Angle.Text.text()
                     data["content.Frames"] = node.Frames.Text.text()
                     if not self.frame.simple_mode:
                         data["content.RelativeAxis"] = node.RelativeAxis.isChecked()
-                        data["content.Tab"] = node.Tab.currentIndex()
-                        data["content.RockCycle"] = node.RockCycle.Text.text()
-                        data["content.WobbleCycle"] = node.WobbleCycle.Text.text()
-                        data["content.WobbleAspect"] = node.WobbleAspect.Text.text()
+                elif NodeType(item.nodeType) == NodeType.Rock:
+                    data["content.Axis"] = node.Axis.currentIndex()
+                    data["content.Angle"] = node.Angle.Text.text()
+                    data["content.Frames"] = node.Frames.Text.text()
+                    if not self.frame.simple_mode:
+                        data["content.RelativeAxis"] = node.RelativeAxis.isChecked()
+                    data["content.RockCycle"] = node.RockCycle.Text.text()
+                elif NodeType(item.nodeType) == NodeType.Wobble:
+                    data["content.Axis"] = node.Axis.currentIndex()
+                    data["content.Angle"] = node.Angle.Text.text()
+                    data["content.Frames"] = node.Frames.Text.text()
+                    if not self.frame.simple_mode:
+                        data["content.RelativeAxis"] = node.RelativeAxis.isChecked()
+                    data["content.WobbleCycle"] = node.WobbleCycle.Text.text()
+                    data["content.WobbleAspect"] = node.WobbleAspect.Text.text()
                 elif NodeType(item.nodeType) == NodeType.CenterRotation:
                     data["content.Method"] = node.Method.currentIndex()
                     data["content.Pivot"] = node.Pivot.currentIndex()
@@ -370,17 +381,30 @@ class MovieMaker(ToolInstance):
             node.content.MoveX.setText(data["content.MoveX"])
             node.content.MoveY.setText(data["content.MoveY"])
             node.content.MoveZ.setText(data["content.MoveZ"])
-        elif NodeType(data["nodeType"]) == NodeType.Rotation:
-            node = Node(self.tool_session, self.frame.scene, NodeType.Rotation, data["nodeID"], model_input=True, center_input=True)
+        elif NodeType(data["nodeType"]) == NodeType.Turn:
+            node = Node(self.tool_session, self.frame.scene, NodeType.Turn, data["nodeID"], model_input=True, center_input=True)
             node.content.Axis.setCurrentIndex(int(data["content.Axis"]))
             node.content.Angle.setText(data["content.Angle"])
             node.content.Frames.setText(data["content.Frames"])
             if not self.frame.simple_mode:
                 node.content.RelativeAxis.setChecked(data["content.RelativeAxis"])
-                node.content.Tab.setCurrentIndex(int(data["content.Tab"]))
-                node.content.RockCycle.setText(data["content.RockCycle"])
-                node.content.WobbleCycle.setText(data["content.WobbleCycle"])
-                node.content.WobbleAspect.setText(data["content.WobbleAspect"])
+        elif NodeType(data["nodeType"]) == NodeType.Rock:
+            node = Node(self.tool_session, self.frame.scene, NodeType.Rock, data["nodeID"], model_input=True, center_input=True)
+            node.content.Axis.setCurrentIndex(int(data["content.Axis"]))
+            node.content.Angle.setText(data["content.Angle"])
+            node.content.Frames.setText(data["content.Frames"])
+            if not self.frame.simple_mode:
+                node.content.RelativeAxis.setChecked(data["content.RelativeAxis"])
+            node.content.RockCycle.setText(data["content.RockCycle"])
+        elif NodeType(data["nodeType"]) == NodeType.Wobble:
+            node = Node(self.tool_session, self.frame.scene, NodeType.Wobble, data["nodeID"], model_input=True, center_input=True)
+            node.content.Axis.setCurrentIndex(int(data["content.Axis"]))
+            node.content.Angle.setText(data["content.Angle"])
+            node.content.Frames.setText(data["content.Frames"])
+            if not self.frame.simple_mode:
+                node.content.RelativeAxis.setChecked(data["content.RelativeAxis"])
+            node.content.WobbleCycle.setText(data["content.WobbleCycle"])
+            node.content.WobbleAspect.setText(data["content.WobbleAspect"])
         elif NodeType(data["nodeType"]) == NodeType.CenterRotation:
             node = Node(self.tool_session, self.frame.scene, NodeType.CenterRotation, data["nodeID"], center_input=True)
             node.content.Method.setCurrentIndex(int(data["content.Method"]))
@@ -572,12 +596,17 @@ class MovieMaker(ToolInstance):
         data["settings.model_atoms"] = self.frame.settings_menu.model_atoms
         data["settings.model_hetero"] = self.frame.settings_menu.model_hetero
         data["settings.model_water"] = self.frame.settings_menu.model_water
+        data["settings.model_refresh"] = self.frame.settings_menu.model_refresh
         data["settings.save_script_folder"] = self.frame.settings_menu.save_script_folder
         data["settings.save_log_folder"] = self.frame.settings_menu.save_log_folder
         data["settings.nodes_transparency_title"] = self.frame.settings_menu.nodes_transparency_title
         data["settings.nodes_transparency_background"] = self.frame.settings_menu.nodes_transparency_background
         data["settings.command_delay"] = self.frame.settings_menu.command_delay
-        data["settings.current_info_type"] = self.frame.settings_menu.current_info_type
+        data["settings.allow_info_link"] = self.frame.settings_menu.allow_info_link
+        data["settings.grid_squares"] = self.frame.settings_menu.grid_squares
+        data["settings.grid_size"] = self.frame.settings_menu.grid_size
+        data["settings.grid_snap"] = self.frame.settings_menu.grid_snap
+        data["settings.viewer_refresh"] = self.frame.settings_menu.viewer_refresh
         data["log"] = self.frame.log
 
         data["style_mode"] = self.frame.theme_toggle.isChecked()
@@ -610,18 +639,23 @@ class MovieMaker(ToolInstance):
         data["edges"] = edges_list
         return data
 
-    def loadSession(self, data):
+    def loadSession(self, data:dict[str,]):
         self.frame.settings_menu.model_residues = data["settings.model_residues"]
         self.frame.settings_menu.model_atoms = data["settings.model_atoms"]
         self.frame.settings_menu.model_hetero = data["settings.model_hetero"]
         self.frame.settings_menu.model_water = data["settings.model_water"]
+        self.frame.settings_menu.model_refresh = float(data["settings.model_refresh"])
         self.frame.settings_menu.save_script_folder = data["settings.save_script_folder"]
         self.frame.settings_menu.save_log_folder = data["settings.save_log_folder"]
         self.frame.settings_menu.nodes_transparency_title = int(data["settings.nodes_transparency_title"])
         self.frame.settings_menu.nodes_transparency_background = int(data["settings.nodes_transparency_background"])
-        self.frame.settings_menu.command_delay = data["log"]
-        self.frame.log = float(data["settings.command_delay"])
-        self.frame.settings_menu.current_info_type = int(data["settings.current_info_type"])
+        self.frame.settings_menu.command_delay = float(data["settings.command_delay"])
+        self.frame.log = data["log"]
+        self.frame.settings_menu.allow_info_link = bool(data["settings.allow_info_link"])
+        self.frame.settings_menu.grid_squares = int(data["settings.grid_squares"])
+        self.frame.settings_menu.grid_size = int(data["settings.grid_size"])
+        self.frame.settings_menu.grid_snap = bool(data["settings.grid_snap"])
+        self.frame.settings_menu.viewer_refresh = float(data["settings.viewer_refresh"])
 
         self.frame.theme_toggle.setChecked(data["style_mode"])
         self.frame.simple_mode = not data["simple_mode"]
@@ -654,14 +688,14 @@ class MovieMaker(ToolInstance):
         for node in chain_start:
             node.summary.updateOutputValues(check_update=False)
         
-    def take_snapshot(self, session, flags):
+    def take_snapshot(self, session, flags) -> dict[str,]:
         return {
             'version': 1,
             'data': self.saveSession()
         }
 
     @classmethod
-    def restore_snapshot(class_obj, session, data):
+    def restore_snapshot(class_obj, session, data:dict[str,]):
         # Instead of using a fixed string when calling the constructor below, we could
         # have saved the tool name during take_snapshot() (from self.tool_name, inherited
         # from ToolInstance) and used that saved tool name.  There are pros and cons to

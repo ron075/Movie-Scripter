@@ -78,9 +78,6 @@ class QDMGraphicsSocket(QGraphicsItem):
         elif SocketType(self.socket.socket_type) == SocketType.DELETE_SOCKET:
             self._pen_picker = QPen(QColor("#FFCCCCCC"))
             self._picker_background_color = QColor("#FFCCCCCC")
-        #elif SocketType(self.socket.socket_type) == SocketType.SPLIT_SOCKET:
-            #self._pen_picker = QPen(QColor("#FF6655FF"))
-            #self._picker_background_color = QColor("#FF6655FF")
 
         self._brush_disabled = QBrush(self._color_background_disabled)
         self._brush_output = QBrush(self._color_background_output)
@@ -95,7 +92,7 @@ class QDMGraphicsSocket(QGraphicsItem):
         if hasattr(self, "_pen_picker"):
             self._pen_picker.setWidth(self.outline_width)
             self._brush_picker = QBrush(self._picker_background_color)
-            if NodeType(self.socket.node.nodeType) != NodeType.Picker and SocketType(self.socket.socket_type) != SocketType.DELETE_SOCKET and not self.socket.node.scene.parent.simple_mode:
+            if NodeType(self.socket.node.nodeType) != NodeType.Picker and NodeType(self.socket.node.nodeType) != NodeType.Delete and NodeType(self.socket.node.nodeType) != NodeType.Split and not self.socket.node.scene.parent.simple_mode:
                 self.socket.socket_type = SocketType.DISABLED_SOCKET
         
         self.initUI()     
@@ -104,7 +101,7 @@ class QDMGraphicsSocket(QGraphicsItem):
         #self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         pass
 
-    def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+    def paint(self, painter:QPainter, QStyleOptionGraphicsItem:QStyleOptionGraphicsItem, widget=None):
         if SocketType(self.socket.socket_type) == SocketType.DISABLED_SOCKET:
             painter.setBrush(self._brush_disabled)
         elif SocketType(self.socket.socket_type) == SocketType.INPUT_SOCKET:
@@ -123,20 +120,16 @@ class QDMGraphicsSocket(QGraphicsItem):
                 pen = self._pen_output
             else:
                 pen = self._pen_picker
-        else:
-            if self.socket.hasEdge():
-                if self.socket.edge.grEdge.isSelected():
-                    if NodeType(self.socket.edge.start_socket.node.nodeType) == NodeType.Picker:
-                        pen = self._pen_picker
-                    else:
-                        pen = self._pen_selected
-                    self.setZValue(95)
+        elif self.socket.hasEdge():
+            if self.socket.edge.grEdge.isSelected():
+                if NodeType(self.socket.edge.start_socket.node.nodeType) == NodeType.Picker:
+                    pen = self._pen_picker
                 else:
-                    pen = self._pen
-                    self.setZValue(10)
+                    pen = self._pen_selected
             else:
                 pen = self._pen
-                self.setZValue(10)
+        else:
+            pen = self._pen
                     
         painter.setPen(pen)
         painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)

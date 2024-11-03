@@ -3,7 +3,6 @@ from __future__ import annotations
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
-import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

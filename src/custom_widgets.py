@@ -8,6 +8,8 @@ from itertools import groupby
 from operator import itemgetter
 import re
 import random
+import math
+from .util import *
 from .stylesheets import *
 from .enum_classes import *
 from chimerax.core import models
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     from .node import Node
     from .main_window import NodeEditor
 
-class QColorMap(QWidget):
+class QColorMap(CustomQWidget):
     def __init__(self, colormap_height:int, parent=None):
 
         super().__init__(parent)
@@ -98,7 +100,7 @@ class QColorMap(QWidget):
         color = QColor().fromRgb(r, g, b, a)
         return color.name()
 
-class QNumEdit(QWidget):
+class QNumEdit(CustomQWidget):
     def __init__(self, min:int=None, max:int=None, step:int=1, decimals:int=0, horizontal:bool=True, label:str="", addSlider:bool=False, parent=None):
 
         super().__init__(parent)
@@ -139,7 +141,7 @@ class QNumEdit(QWidget):
                 self.Slider.setValue(int(self.max * self.multi))
             else:
                 self.Slider.setValue(0)
-            self.Slider.sliderMoved.connect(self.updateTextFromSlider)
+            self.Slider.valueChanged.connect(self.updateTextFromSlider)
         self.Text = QLineEdit()
         if addSlider:
             value = round(self.Slider.value() / self.multi, self.decimals)
@@ -234,7 +236,7 @@ class QNumEdit(QWidget):
             self.Slider.setValue(int(value * self.multi))
         self.Text.setText(str(int(value) if self.decimals <= 0 else round(value, self.decimals)))
 
-    def updateSliderFromText(self, text):
+    def updateSliderFromText(self, text:str):
         if text != "":
             value = round(float(text), self.decimals)
             if self.decimals <= 0:
@@ -250,7 +252,7 @@ class QNumEdit(QWidget):
             if self.addSlider:
                 self.Slider.setValue(int(value * self.multi))
  
-    def updateTextFromSlider(self, value):
+    def updateTextFromSlider(self, value:int|float|None):
         if value is None:
             value = self.Slider.value()
         value = value / self.multi
@@ -259,10 +261,16 @@ class QNumEdit(QWidget):
     def setMin(self, min_value:int|float):
         self.min = min_value
         self.Text.setValidator(QIntValidator(bottom=min_value))
+        if self.addSlider:
+            if self.Slider.value() < self.min:
+                self.Slider.setValue(self.min)
 
     def setMax(self, max_value:int|float):
         self.max = max_value
         self.Text.setValidator(QIntValidator(top=max_value))
+        if self.addSlider:
+            if self.Slider.value() > self.max:
+                self.Slider.setValue(self.max)
 
     def setText(self, text:str):
         value = round(float(text), self.decimals)
@@ -285,14 +293,6 @@ class QNumEdit(QWidget):
         if self.Text.text() == "":
             text = "0"
         return text
-            
-    def setEnabled(self, a0:bool):
-        if self.addSlider:
-            self.Slider.setEnabled(a0)
-        self.Text.setEnabled(a0)
-        self.Plus.setEnabled(a0)
-        self.Minus.setEnabled(a0)
-        return super().setEnabled(a0)
     
     def removeWidgets(self):
         if self.addSlider:
@@ -325,7 +325,7 @@ class QNumEdit(QWidget):
             self.layoutH2V1.addWidget(self.Minus)
             self.layoutH2.addWidget(self.Text)
 
-class QTreeViewSelector(QWidget):
+class QTreeViewSelector(CustomQWidget):
     def __init__(self, session, scene:Scene, node:Node, all_views:bool, selector_type:NodePickerType=NodePickerType.ModelPicker, parent=None):
         super().__init__(parent)
 
@@ -359,7 +359,6 @@ class QTreeViewSelector(QWidget):
             self.ModelTree.setFixedHeight(200)
             self.ModelTree.setFixedWidth(200)            
             self.ModelTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.ModelPicked = QTextEdit()
             self.ModelPicked.setFixedHeight(200)
@@ -383,7 +382,6 @@ class QTreeViewSelector(QWidget):
             self.ModelTree.setFixedHeight(200)
             self.ModelTree.setFixedWidth(200)
             self.ModelTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.layoutH1T1H1V2 = QVBoxLayout()
             self.ModelPicked = QListView()
@@ -416,7 +414,6 @@ class QTreeViewSelector(QWidget):
             self.ModelTree.setFixedHeight(200)
             self.ModelTree.setFixedWidth(200)  
             self.ModelTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.ModelPicked = QLineEdit()
             self.ModelPicked.setReadOnly(True)
@@ -446,7 +443,6 @@ class QTreeViewSelector(QWidget):
             self.ViewTree.setFixedHeight(200)
             self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.ViewTreeSearch.textChanged.connect(self.searchViewTree)
             self.ModelPicked = QTextEdit()
@@ -480,7 +476,6 @@ class QTreeViewSelector(QWidget):
             self.ViewTree.setFixedHeight(200)
             self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ViewTreeSearch.textChanged.connect(self.searchViewTree)
             self.ViewPicked = QListView()
             self.ViewPickedModel = QStandardItemModel()
@@ -533,7 +528,6 @@ class QTreeViewSelector(QWidget):
             self.ViewTree.setFixedHeight(200)
             self.ViewTree.setFixedWidth(200)
             self.ViewTreeModel = QStandardItemModel()
-            self.updateModels(self.scene.parent.current_models)
             self.ModelTreeSearch.textChanged.connect(self.searchModelTree)
             self.Label2DTreeSearch.textChanged.connect(self.searchLabel2DTree)
             self.Label3DTreeSearch.textChanged.connect(self.searchLabel3DTree)
@@ -588,7 +582,7 @@ class QTreeViewSelector(QWidget):
             self.Add.clicked.connect(self.AddGroup)
             self.Remove = QPushButton("Remove Group")
             self.Remove.clicked.connect(self.removeGroup)
-            self.Remove.setEnabled(False)
+            changeEnabled(self.Remove, False)
             self.layoutH2V1.addWidget(self.Add)
             self.layoutH2V1.addWidget(self.Remove)
             self.layoutH2.addLayout(self.layoutH2V1)
@@ -607,7 +601,7 @@ class QTreeViewSelector(QWidget):
             self.Add.clicked.connect(self.AddGroup)
             self.Remove = QPushButton("Remove Point")
             self.Remove.clicked.connect(self.removeGroup)
-            self.Remove.setEnabled(False)
+            changeEnabled(self.Remove, False)
             self.layoutH2V1.addWidget(self.Add)
             self.layoutH2V1.addWidget(self.Remove)
             self.layoutH2.addLayout(self.layoutH2V1)
@@ -620,7 +614,7 @@ class QTreeViewSelector(QWidget):
         self.layoutH2V2 = QVBoxLayout()
         self.Reset = QPushButton("Reset")
         self.Reset.clicked.connect(self.resetModels)
-        self.Reset.setEnabled(False)
+        changeEnabled(self.Reset, False)
         self.layoutH2.addWidget(self.Reset)
         if NodePickerType(self.selector_type) != NodePickerType.DeletePicker:
             self.Copy = QPushButton("Copy Pick")
@@ -635,32 +629,11 @@ class QTreeViewSelector(QWidget):
         self.widget_layout.addLayout(self.layoutH1)
         self.widget_layout.addLayout(self.layoutH2)
 
-        if NodePickerType(self.selector_type) == NodePickerType.ModelPicker or NodePickerType(self.selector_type) == NodePickerType.ColorPicker:
-            self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-            self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
-        elif NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
-            self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-            self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
-        elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
-            self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-            self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
-            self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-            self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
-        elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
-            self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-            self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
-        elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
-            self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-            self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
-            self.Label2DTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-            self.Label2DTree.selectionModel().selectionChanged.connect(self.label2DSelectionChanged)
-            self.Label3DTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-            self.Label3DTree.selectionModel().selectionChanged.connect(self.label3DSelectionChanged)
-            self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-            self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
+        self.updateModels(self.scene.parent.current_models)
             
         self.updateTab(0)
-    def minimizeSelection(self, selected_list:list[list[str]]):
+
+    def minimizeSelection(self, selected_list:list[list[str]]) -> list[list[str]]:
         start_list = list(selected_list)
         current_list = list(selected_list)
         filtered_list:list[list[str]] = []
@@ -813,7 +786,7 @@ class QTreeViewSelector(QWidget):
                 selected.append(f"#{value[0]}.{value[1]}:{value[2]}@{value[3]}")
         return selected
 
-    def groupConsecutive(self, strings:str):
+    def groupConsecutive(self, strings:str) -> str:
         if all(x.isdigit() for x in strings.split(",")):    
             mol = sorted([int(x) for x in strings.split(",")]) 
             z = {}
@@ -854,11 +827,11 @@ class QTreeViewSelector(QWidget):
             self.node.node_output.edge.end_socket.node.summary.picker_model = self.selected_model
             self.node.summary.ModelText.setText("\n".join(self.selected_model))
             if self.selected_model != []:
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateModel()
         elif NodePickerType(self.selector_type) == NodePickerType.ColorPicker:
@@ -874,12 +847,12 @@ class QTreeViewSelector(QWidget):
                 else:
                     self.node.node_output.edge.end_socket.node.summary.picker_color_groups = self.selected_color_groups
                 self.node.summary.ColorText.setText(f"{len(self.selected_color_groups)} groups")
-                self.Remove.setEnabled(True) 
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Remove, True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateColor()
         elif NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
@@ -890,11 +863,11 @@ class QTreeViewSelector(QWidget):
             self.node.node_output.edge.end_socket.node.summary.picker_center = self.selected_model
             self.node.summary.CenterText.setText("\n".join(self.selected_model))
             if self.selected_model != []:
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateCenter()
         elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
@@ -906,9 +879,9 @@ class QTreeViewSelector(QWidget):
                     self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_model
                     self.node.summary.DeleteText.setText("\n".join(self.selected_model))
                     if self.selected_model != []:
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
                 elif index == 1:
                     self.selected_2dlabel = selected_temp
                     self.Label2DPicked.clear()  
@@ -916,9 +889,9 @@ class QTreeViewSelector(QWidget):
                     self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_2dlabel
                     self.node.summary.DeleteText.setText("\n".join(self.selected_2dlabel))
                     if self.selected_2dlabel != []:
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
                 elif index == 2:
                     self.selected_3dlabel = selected_temp
                     self.Label3DPicked.clear()   
@@ -926,9 +899,9 @@ class QTreeViewSelector(QWidget):
                     self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_3dlabel
                     self.node.summary.DeleteText.setText("\n".join(self.selected_3dlabel))
                     if self.selected_3dlabel != []:
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateDelete()
         elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
@@ -939,11 +912,11 @@ class QTreeViewSelector(QWidget):
             self.node.node_output.edge.end_socket.node.summary.picker_view = self.selected_model
             self.node.summary.ViewText.setText("\n".join(self.selected_model))
             if self.selected_model != []:
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateView()
 
@@ -958,11 +931,11 @@ class QTreeViewSelector(QWidget):
             self.node.node_output.edge.end_socket.node.summary.picker_view = self.selected_view
             self.node.summary.ViewText.setText("\n".join(self.selected_view))
             if self.selected_view != []:
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateView()
         elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
@@ -977,12 +950,12 @@ class QTreeViewSelector(QWidget):
                     else:
                         self.node.summary.FlyText.setText(f"{len(self.selected_fly_groups)} transitions")
                     self.node.node_output.edge.end_socket.node.content.addFlySequence()
-                self.Remove.setEnabled(True)
-                self.Copy.setEnabled(True)
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Remove, True)
+                changeEnabled(self.Copy, True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Copy.setEnabled(False)
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Reset, False)
                 if not restore:
                     self.node.node_output.edge.end_socket.node.summary.updateFly()
         elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
@@ -993,9 +966,9 @@ class QTreeViewSelector(QWidget):
             self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_view
             self.node.summary.DeleteText.setText("\n".join(self.selected_view))
             if self.selected_view != []:
-                self.Reset.setEnabled(True)
+                changeEnabled(self.Reset, True)
             else:
-                self.Reset.setEnabled(False)
+                changeEnabled(self.Reset, False)
             if not restore:
                 self.node.node_output.edge.end_socket.node.summary.updateDelete()
 
@@ -1063,8 +1036,8 @@ class QTreeViewSelector(QWidget):
                 item = QStandardItem(f"Group {i + 1}")
                 self.ModelPickedModel.appendRow(item)
             if self.selected_color_groups == []:
-                self.Copy.setEnabled(False)
-                self.Remove.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Remove, False)
             self.ModelTree.selectionModel().clearSelection()
             self.ModelPicked.selectionModel().clearSelection()
             self.ModelGroup.setText("")
@@ -1085,8 +1058,8 @@ class QTreeViewSelector(QWidget):
                 item = QStandardItem(f"{self.selected_fly_groups[i]}")
                 self.ViewPickedModel.appendRow(item)
             if self.selected_fly_groups == []:
-                self.Copy.setEnabled(False)
-                self.Remove.setEnabled(False)
+                changeEnabled(self.Copy, False)
+                changeEnabled(self.Remove, False)
             self.ViewTree.selectionModel().clearSelection()
             self.ViewPicked.selectionModel().clearSelection()
 
@@ -1108,7 +1081,7 @@ class QTreeViewSelector(QWidget):
             self.ModelPicked.reset()
             self.ModelPickedModel.clear()
             self.ModelGroup.setText("")
-            self.Remove.setEnabled(False)
+            changeEnabled(self.Remove, False)
         elif NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
             self.selected_model = []
             self.node.node_output.edge.end_socket.node.summary.picker_center = self.selected_model
@@ -1138,7 +1111,7 @@ class QTreeViewSelector(QWidget):
             self.ViewTree.selectionModel().clearSelection()
             self.ViewPicked.reset()
             self.ViewPickedModel.clear()
-            self.Remove.setEnabled(False)
+            changeEnabled(self.Remove, False)
         elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
             if self.Tab.currentIndex() == 0:
                 self.selected_model = []
@@ -1163,8 +1136,9 @@ class QTreeViewSelector(QWidget):
             self.node.summary.DeleteText.setText("None")
             self.node.node_output.edge.end_socket.node.summary.updateDelete()
         if hasattr(self, "Copy"):
-            self.Copy.setEnabled(False)
-        self.Reset.setEnabled(False)
+            changeEnabled(self.Copy, False)
+        changeEnabled(self.Reset, False)
+
 
     def copyModels(self):
         if NodePickerType(self.selector_type) == NodePickerType.ModelPicker:
@@ -1205,7 +1179,7 @@ class QTreeViewSelector(QWidget):
                     item = QStandardItem(f"Group {i + 1}")
                     self.ModelPickedModel.appendRow(item)
                 if len(self.selected_color_groups) > 0:
-                    self.Remove.setEnabled(True)
+                    changeEnabled(self.Remove, True)
                 enable = True
                 self.node.node_output.edge.end_socket.node.summary.picker_color_groups = self.selected_color_groups
                 self.node.summary.ColorText.setText(f"{len(self.selected_color_groups)} Groups")
@@ -1247,64 +1221,64 @@ class QTreeViewSelector(QWidget):
                     item = QStandardItem(f"{self.selected_fly_groups[i]}")
                     self.ViewPickedModel.appendRow(item)
                 if len(self.selected_fly_groups) > 0:
-                    self.Remove.setEnabled(True)
+                    changeEnabled(self.Remove, True)
                 enable = True
                 self.node.node_output.edge.end_socket.node.summary.picker_fly_groups = self.selected_fly_groups
                 self.node.summary.ViewText.setText(f"{len(self.selected_fly_groups)} Groups")
                 self.node.node_output.edge.end_socket.node.content.addFlySequences()
                 self.node.node_output.edge.end_socket.node.summary.updateFly()
         if enable:
-            self.Copy.setEnabled(True)     
-            self.Reset.setEnabled(True)
+            changeEnabled(self.Copy, True)
+            changeEnabled(self.Reset, True)
         
     def refreshTabPaste(self):
         if NodePickerType(self.selector_type) == NodePickerType.ModelPicker:
             if self.Tab.currentIndex() == 0:# Model, Center, Color
                 if self.scene.parent.copy_selected_model_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
             elif self.Tab.currentIndex() == 1:# Label2D
                 if self.scene.parent.copy_selected_label2D_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
             elif self.Tab.currentIndex() == 2:# Label3D
                 if self.scene.parent.copy_selected_label3D_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
             elif self.Tab.currentIndex() == 3:# View
                 if self.scene.parent.copy_selected_view_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
         elif NodePickerType(self.selector_type) == NodePickerType.ColorPicker:
             if self.scene.parent.copy_selected_color_objects is not None:
-                self.Paste.setEnabled(True)
+                changeEnabled(self.Paste, True)
             else:
-                self.Paste.setEnabled(False)
+                changeEnabled(self.Paste, False)
         elif NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
             if self.scene.parent.copy_selected_center_objects is not None:
-                self.Paste.setEnabled(True)
+                changeEnabled(self.Paste, True)
             else:
-                self.Paste.setEnabled(False)
+                changeEnabled(self.Paste, False)
         elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
             if self.Tab.currentIndex() == 0:# Model
                 if self.scene.parent.copy_selected_model_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
             elif self.Tab.currentIndex() == 1:# View
                 if self.scene.parent.copy_selected_view_objects is not None:
-                    self.Paste.setEnabled(True)
+                    changeEnabled(self.Paste, True)
                 else:
-                    self.Paste.setEnabled(False)
+                    changeEnabled(self.Paste, False)
         elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
             if self.scene.parent.copy_selected_fly_objects is not None:
-                self.Paste.setEnabled(True)
+                changeEnabled(self.Paste, True)
             else:
-                self.Paste.setEnabled(False)
+                changeEnabled(self.Paste, False)
         
     def updateTab(self, index:int=None):
         if index is not None:
@@ -1320,11 +1294,11 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ModelText.setText(text)
                     self.modelSelectionChanged()
                     if self.ModelPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 elif index == 1:# Label2D
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_model = self.selected_2dlabel
@@ -1335,11 +1309,11 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ModelText.setText(text)
                     self.label2DSelectionChanged()
                     if self.Label2DPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 elif index == 2:# Label3D
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_model = self.selected_3dlabel
@@ -1350,11 +1324,11 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ModelText.setText(text)
                     self.label3DSelectionChanged()
                     if self.Label3DPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 elif index == 3:# View
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_model = self.selected_view
@@ -1365,29 +1339,29 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ModelText.setText(text)
                     self.viewSelectionChanged()
                     if self.ViewPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 self.refreshTabPaste()
             elif NodePickerType(self.selector_type) == NodePickerType.ColorPicker:
                 self.modelSelectionChanged()
                 if self.ModelPicked.model().rowCount() > 0:
-                    self.Copy.setEnabled(True)
-                    self.Reset.setEnabled(True)
+                    changeEnabled(self.Copy, True)
+                    changeEnabled(self.Reset, True)
                 else:
-                    self.Copy.setEnabled(False)
-                    self.Reset.setEnabled(False)
+                    changeEnabled(self.Copy, False)
+                    changeEnabled(self.Reset, False)
                 self.refreshTabPaste()
             elif NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
                 self.modelSelectionChanged()
                 if self.ModelPicked.text() != "":
-                    self.Copy.setEnabled(True)
-                    self.Reset.setEnabled(True)
+                    changeEnabled(self.Copy, True)
+                    changeEnabled(self.Reset, True)
                 else:
-                    self.Copy.setEnabled(False)
-                    self.Reset.setEnabled(False)
+                    changeEnabled(self.Copy, False)
+                    changeEnabled(self.Reset, False)
                 self.refreshTabPaste()
             elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
                 if index == 0:# Model
@@ -1400,11 +1374,11 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ViewText.setText(text)
                     self.modelSelectionChanged()
                     if self.ModelPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 elif index == 1:# View
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_view = self.selected_view
@@ -1415,20 +1389,20 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.ViewText.setText(text)
                     self.viewSelectionChanged()
                     if self.ViewPicked.toPlainText() != "":
-                        self.Copy.setEnabled(True)
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Copy, True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Copy.setEnabled(False)
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Copy, False)
+                        changeEnabled(self.Reset, False)
                 self.refreshTabPaste()
             elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
                 self.viewSelectionChanged()
                 if self.ViewPicked.model().rowCount() > 0:
-                    self.Copy.setEnabled(True)
-                    self.Reset.setEnabled(True)
+                    changeEnabled(self.Copy, True)
+                    changeEnabled(self.Reset, True)
                 else:
-                    self.Copy.setEnabled(False)
-                    self.Reset.setEnabled(False)
+                    changeEnabled(self.Copy, False)
+                    changeEnabled(self.Reset, False)
                 self.refreshTabPaste()
             elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
                 if index == 0:# Model, Center, Color
@@ -1441,9 +1415,9 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.DeleteText.setText(text)
                     self.modelSelectionChanged()
                     if self.ModelPicked.toPlainText() != "":
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
                 elif index == 1:# Label2D
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_2dlabel
@@ -1454,9 +1428,9 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.DeleteText.setText(text)
                     self.label2DSelectionChanged()
                     if self.Label2DPicked.toPlainText() != "":
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
                 elif index == 2:# Label3D
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_3dlabel
@@ -1467,9 +1441,9 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.DeleteText.setText(text)
                     self.label3DSelectionChanged()
                     if self.Label3DPicked.toPlainText() != "":
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
                 elif index == 3:# View
                     if hasattr(self.node, "node_output"):
                         self.node.node_output.edge.end_socket.node.summary.picker_delete = self.selected_view
@@ -1480,9 +1454,9 @@ class QTreeViewSelector(QWidget):
                         self.node.summary.DeleteText.setText(text)
                     self.viewSelectionChanged()
                     if self.ViewPicked.toPlainText() != "":
-                        self.Reset.setEnabled(True)
+                        changeEnabled(self.Reset, True)
                     else:
-                        self.Reset.setEnabled(False)
+                        changeEnabled(self.Reset, False)
 
             if hasattr(self.node, "node_output"):
                 self.node.node_output.edge.end_socket.node.content.updateTab(index)
@@ -1623,7 +1597,7 @@ class QTreeViewSelector(QWidget):
                         surface_item = QStandardItem(f"{struct.id[1]}-{struct.name}")
                         volume_item.appendRow(surface_item)
             elif type(obj) == markers.MarkerSet:
-                marker_item = QStandardItem(f"{obj.id[0]} - {obj.name}")
+                marker_item = QStandardItem(f"Marker \"{obj.name}\" #{obj.id[0]}")
                 model.appendRow(marker_item)
         return [model]
     
@@ -1663,8 +1637,7 @@ class QTreeViewSelector(QWidget):
                         surface_item = QStandardItem(f"{struct.id[1]}-{struct.name}")
                         volume_item.appendRow(surface_item)
             elif type(obj) == markers.MarkerSet:
-                marker_item = QStandardItem(f"{obj.id[0]} - {obj.name}")
-                self.scene.parent.marker_list.append(f"{obj.id[0]} - {obj.name}")
+                marker_item = QStandardItem(f"Marker \"{obj.name}\" #{obj.id[0]}")
                 model.appendRow(marker_item)
             elif type(obj) == label2d.LabelModel:
                 self.label2D_list.append([int(obj.id[0]), QStandardItem(f"{int(obj.id[1])}-{obj.name}")])
@@ -1703,27 +1676,51 @@ class QTreeViewSelector(QWidget):
     
     def modelSelectionChanged(self):
         if self.ModelTree.selectedIndexes() == []:
-            self.Set.setEnabled(False)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, False)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, False)
         else:
-            self.Set.setEnabled(True)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, True)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, True)
     
     def label2DSelectionChanged(self):
         if self.Label2DTree.selectedIndexes() == []:
-            self.Set.setEnabled(False)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, False)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, False)
         else:
-            self.Set.setEnabled(True)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, True)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, True)
     
     def label3DSelectionChanged(self):
         if self.Label3DTree.selectedIndexes() == []:
-            self.Set.setEnabled(False)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, False)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, False)
         else:
-            self.Set.setEnabled(True)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, True)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, True)
     
     def viewSelectionChanged(self):
         if self.ViewTree.selectedIndexes() == []:
-            self.Set.setEnabled(False)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, False)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, False)
         else:
-            self.Set.setEnabled(True)
+            if hasattr(self, "Set"):
+                changeEnabled(self.Set, True)
+            if hasattr(self, "Add"):
+                changeEnabled(self.Add, True)
     
     def updateModels(self, models:list):
         if NodePickerType(self.selector_type) == NodePickerType.ModelPicker or NodePickerType(self.selector_type) == NodePickerType.ColorPicker or NodePickerType(self.selector_type) == NodePickerType.CenterPicker:
@@ -1738,6 +1735,8 @@ class QTreeViewSelector(QWidget):
                 self.proxyModelModel.setSourceModel(self.ModelTreeModel)
                 self.ModelTree.setModel(self.proxyModelModel)
                 self.ModelTree.header().setFirstSectionMovable(False)
+                self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+                self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
         elif NodePickerType(self.selector_type) == NodePickerType.DeletePicker:
             models_list:QStandardItemModel = []
             if models is not None:
@@ -1780,6 +1779,14 @@ class QTreeViewSelector(QWidget):
                 self.proxyViewModel.setSourceModel(self.ViewTreeModel)
                 self.ViewTree.setModel(self.proxyViewModel)
                 self.ViewTree.header().setFirstSectionMovable(False)
+                self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+                self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
+                self.Label2DTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+                self.Label2DTree.selectionModel().selectionChanged.connect(self.label2DSelectionChanged)
+                self.Label3DTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+                self.Label3DTree.selectionModel().selectionChanged.connect(self.label3DSelectionChanged)
+                self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+                self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
         elif NodePickerType(self.selector_type) == NodePickerType.ViewPicker:
             models_list = []
             if models is not None:
@@ -1804,6 +1811,10 @@ class QTreeViewSelector(QWidget):
                 self.proxyViewModel.setSourceModel(self.ViewTreeModel)
                 self.ViewTree.setModel(self.ViewTreeModel)
                 self.ViewTree.header().setFirstSectionMovable(False)
+                self.ModelTree.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+                self.ModelTree.selectionModel().selectionChanged.connect(self.modelSelectionChanged)
+                self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+                self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
         elif NodePickerType(self.selector_type) == NodePickerType.FlyPicker:
             models_list = []
             if models is not None:
@@ -1818,22 +1829,25 @@ class QTreeViewSelector(QWidget):
                     self.ViewTreeModel.insertRow(0, QStandardItem("All"))
                 self.ViewTree.setModel(self.ViewTreeModel)
                 self.ViewTree.header().setFirstSectionMovable(False)
+                self.ViewTree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+                self.ViewTree.selectionModel().selectionChanged.connect(self.viewSelectionChanged)
 
 class QSwitchCircle(QWidget):
-    def __init__(self, parent:QSwitchControl, color:str):
+    def __init__(self, parent:QSwitchControl, color:str, radius:int=14):
         super().__init__(parent=parent)
         self.color = color
+        self.radius = radius
         
-    def paintEvent(self, event):
+    def paintEvent(self, event:QPaintEvent):
         painter = QPainter()
         painter.begin(self)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(self.color))
-        painter.drawEllipse(0, 0, 12, 12)
+        painter.drawEllipse(0, 0, self.radius - 2, self.radius - 2)
         painter.end()
 
-class QSwitchControl(QCheckBox):
-    def __init__(self, editor:NodeEditor, checked:bool=False, parent=None):
+class QSwitchControl(CustomQCheckBox):
+    def __init__(self, editor:NodeEditor, checked:bool=False, radius:int=12, parent=None):
         if parent is None:
             super().__init__()
         else:
@@ -1842,19 +1856,23 @@ class QSwitchControl(QCheckBox):
         self.setProperty("type", "switch")
 
         self.editor = editor
+        self.radius = radius
+
+        self.setStyleSheet(f"border-radius : {math.floor(self.radius / 2)};")
+
         self.bg_color = ""
         self.bg_active = ""
         self.circle_color = ""
-        self.setFixedSize(28, 14)
+        self.setFixedSize(self.radius * 2, self.radius)
         self.animation_curve = QEasingCurve.Type=QEasingCurve.Type.OutCirc
         self.animation_duration = 250
-        self.__circle = QSwitchCircle(self, self.circle_color)
+        self.__circle = QSwitchCircle(self, self.circle_color, self.radius)
         self.checked = checked
         if self.checked:
             self.__circle.move(1, 1)
             self.setChecked(True)
         elif not self.checked:
-            self.__circle.move(self.width() - 14, 1)
+            self.__circle.move(self.width() - self.radius, 1)
             self.setChecked(False)
         self.animation = QPropertyAnimation(self.__circle, b"pos")
         self.animation.setEasingCurve(self.animation_curve)
@@ -1885,17 +1903,17 @@ class QSwitchControl(QCheckBox):
         if self.isChecked():
             self.animation.setEndValue(QPoint(2, self.__circle.y()))
         else:
-            self.animation.setEndValue(QPoint(self.width() - 14, self.__circle.y()))
+            self.animation.setEndValue(QPoint(self.width() - self.radius, self.__circle.y()))
         self.animation.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event:QPaintEvent):
         super().paintEvent(event)
 
-    def hitButton(self, pos):
+    def hitButton(self, pos:QPoint) -> bool:
         return self.contentsRect().contains(pos)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event:QMouseEvent):
         self.setChecked(not self.isChecked())
 
-    def updateState(self, event):
+    def updateState(self):
         self.start_animation()
