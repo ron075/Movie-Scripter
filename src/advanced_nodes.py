@@ -5,6 +5,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtGui import *
 from sys import platform
+from .util import *  
 from .custom_widgets import *    
 from .enum_classes import * 
 from .node_base import * 
@@ -34,7 +35,6 @@ class AdvancedNodeStart(NodeBase):
         self.layoutH1 = QHBoxLayout()
         self.lRecord = QLabel("Record Movie")
         self.Record = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Record)
         self.layoutH1.addWidget(self.lRecord)
         self.layoutH1.addWidget(self.Record, alignment=Qt.AlignmentFlag.AlignLeft, stretch=1)
 
@@ -48,11 +48,11 @@ class AdvancedNodeStart(NodeBase):
 
         self.Height = QNumEdit(min=0, max=2160, step=1, decimals=0, addSlider=True, label="Height")
         self.Height.setText("1024")
-        self.Height.setEnabled(False)
+        changeEnabled(self.Height, False)
 
         self.Width = QNumEdit(min=0, max=4096, step=1, decimals=0, addSlider=True, label="Height")
         self.Width.setText("1280")
-        self.Width.setEnabled(False)
+        changeEnabled(self.Width, False)
 
         self.layoutH3 = QHBoxLayout()
         self.BackgroundColor = QPushButton("Change Background\nColor") 
@@ -62,7 +62,7 @@ class AdvancedNodeStart(NodeBase):
         self.ColorLabel = QLabel()
         self.ColorLabel.setFixedWidth(50)   
         self.ColorLabel.setFixedHeight(50)    
-        self.ColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.ColorLabel.setObjectName("color")    
         self.ColorDialog = QColorDialog()
         self.layoutH3.addWidget(self.BackgroundColor)
         self.layoutH3.addWidget(self.ColorLabel)
@@ -126,34 +126,30 @@ class AdvancedNodeStart(NodeBase):
         self.script_string += f"<br>"
 
         return [self.start_script_string, self.script_string, self.end_script_string]
+    
     def updateResolution(self):
-        if self.Resolution.currentText() == "1280p":
-            self.Height.setText("1024")
-            self.Width.setText("1280")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "720p":
-            self.Height.setText("720")
-            self.Width.setText("1280")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "480p":
-            self.Height.setText("480")
-            self.Width.setText("640")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "360p":
-            self.Height.setText("360")
-            self.Width.setText("640")
-            self.Height.setEnabled(False)
-            self.Width.setEnabled(False)
-        elif self.Resolution.currentText() == "Custom":
-            self.Height.setEnabled(True)
-            self.Width.setEnabled(True)
+        if self.Resolution.currentText() == "Custom":
+            changeEnabled(self.Height, True)
+            changeEnabled(self.Width, True)
+        else:
+            changeEnabled(self.Height, False)
+            changeEnabled(self.Width, False)
+            if self.Resolution.currentText() == "1280p":
+                self.Height.setText("1024")
+                self.Width.setText("1280")
+            elif self.Resolution.currentText() == "720p":
+                self.Height.setText("720")
+                self.Width.setText("1280")
+            elif self.Resolution.currentText() == "480p":
+                self.Height.setText("480")
+                self.Width.setText("640")
+            elif self.Resolution.currentText() == "360p":
+                self.Height.setText("360")
+                self.Width.setText("640")
 
     def changeBackgroundColor(self):
         self.BackgroundColorPicked = self.ColorDialog.getColor()
-        self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); }}")
     
 
 class AdvancedNodePicker(NodeBase):
@@ -173,8 +169,6 @@ class AdvancedNodePicker(NodeBase):
             title = "Fly Picker"
         elif self.selector_type == NodePickerType.DeletePicker:
             title = "Delete Picker"
-        elif self.selector_type == NodePickerType.SplitPicker:
-            title = "Split Picker"
 
         super().__init__(session, summary, title, simple_node=False, parent=parent)
 
@@ -258,7 +252,7 @@ class AdvancedNodeColorPalette(NodeBase):
         self.layoutH3 = QHBoxLayout()
         self.Group = QComboBox()
         self.Group.currentIndexChanged.connect(self.groupChange)
-        self.Group.setEnabled(False)  
+        changeEnabled(self.Group, False)
         self.layoutH3.addWidget(self.Group, alignment=Qt.AlignmentFlag.AlignCenter)  
 
         self.Color.currentIndexChanged.connect(self.switchColors)
@@ -272,19 +266,19 @@ class AdvancedNodeColorPalette(NodeBase):
         self.GroupColor = QPushButton("Change Color") 
         self.GroupColor.setFixedWidth(100)   
         self.GroupColor.clicked.connect(self.changeGroupColor)
-        self.GroupColor.setEnabled(False)
+        changeEnabled(self.GroupColor, False)
         self.ColorLabel = QLabel()
         self.ColorLabel.setFixedWidth(50)   
-        self.ColorLabel.setFixedHeight(50)    
-        self.ColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.ColorLabel.setFixedHeight(50) 
+        self.ColorLabel.setObjectName("color")  
         self.ColorDialog = QColorDialog()
         self.layoutH4T1V1H1.addWidget(self.GroupColor)
         self.layoutH4T1V1H1.addWidget(self.ColorLabel)
         self.layoutH4T1V1H2 = QHBoxLayout()
         self.lHalfbond = QLabel("Halfbond")
         self.Halfbond = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Halfbond)
-        self.Halfbond.setEnabled(False)
+        print(11111)
+        changeEnabled(self.Halfbond, False)
         self.layoutH4T1V1H2.addWidget(self.lHalfbond)
         self.layoutH4T1V1H2.addWidget(self.Halfbond)
         self.layoutH4T1V1.addLayout(self.layoutH4T1V1H1)
@@ -294,7 +288,7 @@ class AdvancedNodeColorPalette(NodeBase):
         self.lLevel = QLabel("Level")
         self.Level = QComboBox()
         self.Level.addItems(["Structures", "Polymers", "Chains", "Residues"])
-        self.Level.setEnabled(False)
+        changeEnabled(self.Level, False)
         self.layoutH4T2H1.addWidget(self.lLevel)
         self.layoutH4T2H1.addWidget(self.Level)
         self.Tab.insertTab(0, self.container1, "Simple")
@@ -306,17 +300,16 @@ class AdvancedNodeColorPalette(NodeBase):
         self.Target = QComboBox()
         self.Target.addItems(["All", "Surfaces", "Cartoons", "Atoms", "Bonds", "Rings", "Labels"])
         self.target_list = ["abcspfl", "s", "c", "a", "b", "f", "l"]
-        self.Target.setEnabled(False)
+        changeEnabled(self.Target, False)
         self.layoutH5.addWidget(self.lTarget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH5.addWidget(self.Target, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.layoutH6 = QHBoxLayout()
         self.ChangeTransparency = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.ChangeTransparency)
-        self.ChangeTransparency.setEnabled(False)
+        changeEnabled(self.ChangeTransparency, False)
         self.ChangeTransparency.stateChanged.connect(self.updateTransparency)
         self.Transparency = QNumEdit(min=0, max=100, step=1, decimals=0, addSlider=True, label="Transparency")
-        self.Transparency.setEnabled(False)
+        changeEnabled(self.Transparency, False)
         self.Transparency.setText("0")
         self.layoutH6.addWidget(self.ChangeTransparency)
         self.layoutH6.addLayout(self.Transparency.widget_layout)
@@ -327,11 +320,11 @@ class AdvancedNodeColorPalette(NodeBase):
         self.Delete.clicked.connect(self.deleteNode)
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH7.addWidget(self.Delete)
         self.layoutH7.addWidget(self.Run)
@@ -347,29 +340,30 @@ class AdvancedNodeColorPalette(NodeBase):
 
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
-        if self.summary.used_color_groups != []:
-            self.Group.setEnabled(True)
-            self.GroupColor.setEnabled(True)
-            self.Target.setEnabled(True)
-            self.Halfbond.setEnabled(True)
-            self.ChangeTransparency.setEnabled(True)
-            self.Level.setEnabled(True)
-            self.Run.setEnabled(True)
+        if self.summary.used_color_groups != []:        
+            changeEnabled(self.Group, True)      
+            changeEnabled(self.GroupColor, True)      
+            changeEnabled(self.Target, True)      
+            changeEnabled(self.Halfbond, True)      
+            changeEnabled(self.ChangeTransparency, True)      
+            changeEnabled(self.Level, True)      
+            changeEnabled(self.Run, True)
+
         else:            
-            self.ColorLabel.setStyleSheet("QLabel { background-color : transparent; border: 1px solid black}")
-            self.Tab.setCurrentIndex(0)
-            self.Group.setEnabled(False)
-            self.Group.setCurrentText("")
-            self.GroupColor.setEnabled(False)
-            self.Target.setEnabled(False)
+            self.ColorLabel.setStyleSheet("QLabel { background-color : transparent; }")
+            self.Tab.setCurrentIndex(0)      
+            changeEnabled(self.Group, False)    
+            self.Group.setCurrentText("")  
+            changeEnabled(self.GroupColor, False)      
+            changeEnabled(self.Target, False)      
             self.Target.setCurrentIndex(0)
-            self.Halfbond.setEnabled(False)
-            self.Halfbond.setChecked(False)
-            self.ChangeTransparency.setEnabled(False)
-            self.ChangeTransparency.setChecked(False)
-            self.Level.setEnabled(False)
-            self.Transparency.setText("0")
-            self.Run.setEnabled(False)
+            changeEnabled(self.Halfbond, False)  
+            self.Halfbond.setChecked(False)    
+            changeEnabled(self.ChangeTransparency, False)  
+            self.ChangeTransparency.setChecked(False)   
+            self.Transparency.setText("0") 
+            changeEnabled(self.Level, False)      
+            changeEnabled(self.Run, False)
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -487,13 +481,13 @@ class AdvancedNodeColorPalette(NodeBase):
     def generateColors(self):
         if self.summary.used_color_groups != []:
             if self.Color.currentText() == "From Palette":
-                self.GroupColor.setEnabled(True)
+                changeEnabled(self.GroupColor, True)    
                 self.group_colors = self.ColorMap.get_colors(self.CustomColor.currentText(), len(self.summary.used_color_groups), False)
             elif self.Color.currentText() == "Partial Random":
-                self.GroupColor.setEnabled(True)
+                changeEnabled(self.GroupColor, True)   
                 self.group_colors = self.ColorMap.get_colors(self.CustomColor.currentText(), len(self.summary.used_color_groups), True)
             else:
-                self.GroupColor.setEnabled(False)
+                changeEnabled(self.GroupColor, False)   
                 self.group_colors = [self.Color.currentText()] * len(self.summary.used_color_groups)
 
     def addGroup(self):
@@ -526,7 +520,7 @@ class AdvancedNodeColorPalette(NodeBase):
         self.generateColors()
         self.switchGroup()
 
-    def removeGroup(self, row_indexes):
+    def removeGroup(self, row_indexes:list):
         self.updateUsedColors()
         self.updateGroup()
         for index in sorted(row_indexes, reverse=True):
@@ -567,16 +561,16 @@ class AdvancedNodeColorPalette(NodeBase):
         self.current_index = self.Group.currentIndex()
         if self.current_index > -1:
             if self.Color.currentText() == "Partial Random" or self.Color.currentText() == "From Palette":
-                self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.group_colors[self.current_index].getRgb()[0]},{self.group_colors[self.current_index].getRgb()[1]},{self.group_colors[self.current_index].getRgb()[2]}); border: 1px solid black}}")
+                self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.group_colors[self.current_index].getRgb()[0]},{self.group_colors[self.current_index].getRgb()[1]},{self.group_colors[self.current_index].getRgb()[2]}); }}")
             else:            
-                self.ColorLabel.setStyleSheet("QLabel { background-color : rgb(0,0,0); border: 1px solid black}")
+                self.ColorLabel.setStyleSheet("QLabel { background-color : rgb(0,0,0); }")
             self.Target.setCurrentIndex(self.group_target[self.current_index])        
             self.Halfbond.setChecked(self.group_halfbond[self.current_index])    
             self.ChangeTransparency.setChecked(self.group_change_transparency[self.current_index]) 
             self.Transparency.setText(self.group_transparency[self.current_index])
             self.Level.setCurrentIndex(self.group_level[self.current_index]) 
         else:
-            self.ColorLabel.setStyleSheet("QLabel { background-color : transparent; border: 1px solid black}")
+            self.ColorLabel.setStyleSheet("QLabel { background-color : transparent; }")
 
     def switchColors(self):
         self.generateColors()
@@ -590,16 +584,16 @@ class AdvancedNodeColorPalette(NodeBase):
     def changeGroupColor(self):
         color = self.ColorDialog.getColor()
         self.group_colors[self.Group.currentIndex()] = color
-        self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.group_colors[self.Group.currentIndex()].getRgb()[0]},{self.group_colors[self.Group.currentIndex()].getRgb()[1]},{self.group_colors[self.Group.currentIndex()].getRgb()[2]}); border: 1px solid black}}")
+        self.ColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.group_colors[self.Group.currentIndex()].getRgb()[0]},{self.group_colors[self.Group.currentIndex()].getRgb()[1]},{self.group_colors[self.Group.currentIndex()].getRgb()[2]}); }}")
     
     def updateColorMap(self):
         self.ColorMap.updateColormap(self.CustomColor.currentText())
 
     def updateTransparency(self):
         if self.ChangeTransparency.isChecked():
-            self.Transparency.setEnabled(True)
+            changeEnabled(self.Transparency, True)   
         else:
-            self.Transparency.setEnabled(False)
+            changeEnabled(self.Transparency, False)   
 
 class AdvancedNodeLighting(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -675,6 +669,10 @@ class AdvancedNodeTransparency(NodeBase):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.main_layout)
 
+        self.Models = QNumEdit(min=0, max=100, step=1, decimals=0, label="Models", addSlider=True)
+        self.Models.setText("0")        
+        self.Models.Slider.valueChanged.connect(self.updateMin)
+
         self.Surfaces = QNumEdit(min=0, max=100, step=1, decimals=0, label="Surfaces", addSlider=True)
         self.Surfaces.setText("0")
 
@@ -702,28 +700,34 @@ class AdvancedNodeTransparency(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)   
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)   
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
         self.layoutH2.addWidget(self.RunChain)
 
+        self.main_layout.addLayout(self.Models.widget_layout)
         self.main_layout.addLayout(self.Surfaces.widget_layout)
         self.main_layout.addLayout(self.Cartoons.widget_layout)
         self.main_layout.addLayout(self.Atoms.widget_layout)
         self.main_layout.addLayout(self.layoutH1)
         self.main_layout.addLayout(self.layoutH2)
 
+    def updateMin(self, min:int):
+        self.Surfaces.setMin(min)
+        self.Cartoons.setMin(min)
+        self.Atoms.setMin(min)
+
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.used_model != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)   
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False)   
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -742,6 +746,7 @@ class AdvancedNodeTransparency(NodeBase):
                 objects = "all models"
             
             script_string_comment += f"Changes <i>'{objects}'</i> transparency:</u><br>"
+            script_string_comment += f"   • <u>Models:</u> {self.Models.getText()}% transparent<br>"
             script_string_comment += f"   • <u>Surfaces:</u> {self.Surfaces.getText()}% transparent<br>"
             script_string_comment += f"   • <u>Cartoons:</u> {self.Cartoons.getText()}% transparent<br>"
             if int(self.Atoms.getText()) < 100:
@@ -762,9 +767,14 @@ class AdvancedNodeTransparency(NodeBase):
             else:
                 objects = f"<i>'{objects}'</i>"
 
-            if int(self.Surfaces.getText()) >= 100 and int(self.Cartoons.getText()) >= 100 and int(self.Atoms.getText()) >= 100:
-                self.script_string += f"hide {objects} target scabp<br>"
+            if int(self.Models.getText()) >= 100 and int(self.Surfaces.getText()) >= 100 and int(self.Cartoons.getText()) >= 100 and int(self.Atoms.getText()) >= 100:
+                self.script_string += f"hide {objects} target mscabp<br>"
             else:
+                if int(self.Models.getText()) < 100:
+                    self.script_string += f"show <i>'{objects}'</i> target m<br>"
+                    self.script_string += f"transparency <i>'{objects}'</i> {self.Models.getText()} target m<br>"
+                else:
+                    self.script_string += f"hide <i>'{objects}'</i> target m<br>"
                 if int(self.Surfaces.getText()) < 100:
                     self.script_string += f"show {objects} target s<br>"
                     self.script_string += f"transparency {objects} {self.Surfaces.getText()} target s<br>"
@@ -788,9 +798,9 @@ class AdvancedNodeTransparency(NodeBase):
 
     def updateAtomStyle(self):
         if int(self.Atoms.getText()) >= 100:
-            self.AtomsStyle.setEnabled(False)
+            changeEnabled(self.AtomsStyle, False)  
         else:
-            self.AtomsStyle.setEnabled(True)
+            changeEnabled(self.AtomsStyle, True)  
 
 class AdvancedNode2DLabel(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -855,14 +865,14 @@ class AdvancedNode2DLabel(NodeBase):
         self.TextColorLabel = QLabel()   
         self.TextColorLabel.setFixedWidth(50)
         self.TextColorLabel.setFixedHeight(50)
-        self.TextColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.TextColorLabel.setObjectName("color")
         self.BackgroundColor = QPushButton("Background Color")    
         self.BackgroundColor.clicked.connect(self.openBackgroundColorDialog)
         self.BackgroundColorDialog = QColorDialog()
         self.BackgroundColorLabel = QLabel()   
         self.BackgroundColorLabel.setFixedWidth(50)
-        self.BackgroundColorLabel.setFixedHeight(50)   
-        self.BackgroundColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.BackgroundColorLabel.setFixedHeight(50) 
+        self.BackgroundColorLabel.setObjectName("color")  
         self.layoutH2.addWidget(self.TextColor)
         self.layoutH2.addWidget(self.TextColorLabel)
         self.layoutH2.addWidget(self.BackgroundColor)
@@ -899,19 +909,16 @@ class AdvancedNode2DLabel(NodeBase):
         self.layoutH4V2 = QVBoxLayout()
         self.lBold = QLabel("Bold")
         self.Bold = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Bold)
         self.layoutH4V2.addWidget(self.lBold, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH4V2.addWidget(self.Bold, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH4V3 = QVBoxLayout()
         self.lItalic = QLabel("Italic")
         self.Italic = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.lItalic)
         self.layoutH4V3.addWidget(self.lItalic, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH4V3.addWidget(self.Italic, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH4V4 = QVBoxLayout()
         self.lVisibility = QLabel("Visibility")
         self.Visibility = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Visibility)
         self.Visibility.setChecked(True)
         self.layoutH4V4.addWidget(self.lVisibility, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH4V4.addWidget(self.Visibility, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -926,11 +933,11 @@ class AdvancedNode2DLabel(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False)  
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False)  
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH5.addWidget(self.Delete)
         self.layoutH5.addWidget(self.Run)
@@ -947,9 +954,9 @@ class AdvancedNode2DLabel(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.Text.text() != "" and self.TextColorPicked is not None:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True)  
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False)  
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -1018,18 +1025,18 @@ class AdvancedNode2DLabel(NodeBase):
 
     def openTextColorDialog(self):
         self.TextColorPicked = self.TextColorDialog.getColor()
-        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); }}")
         self.internal_updateRun()
 
     def updateTextColor(self):
-        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); }}")
         
     def openBackgroundColorDialog(self):
         self.BackgroundColorPicked = self.BackgroundColorDialog.getColor()
-        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); }}")
         
     def updateBackgroundColor(self):
-        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); }}")
         
 class AdvancedNode3DLabel(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -1092,14 +1099,14 @@ class AdvancedNode3DLabel(NodeBase):
         self.TextColorLabel = QLabel()   
         self.TextColorLabel.setFixedWidth(50)
         self.TextColorLabel.setFixedHeight(50)
-        self.TextColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.TextColorLabel.setObjectName("color")
         self.BackgroundColor = QPushButton("Background Color")    
         self.BackgroundColor.clicked.connect(self.openBackgroundColorDialog)
         self.BackgroundColorDialog = QColorDialog()
         self.BackgroundColorLabel = QLabel()   
         self.BackgroundColorLabel.setFixedWidth(50)
         self.BackgroundColorLabel.setFixedHeight(50)   
-        self.BackgroundColorLabel.setStyleSheet("QLabel { border: 1px solid black }")
+        self.BackgroundColorLabel.setObjectName("color")
         self.layoutH2.addWidget(self.TextColor)
         self.layoutH2.addWidget(self.TextColorLabel)
         self.layoutH2.addWidget(self.BackgroundColor)
@@ -1149,7 +1156,6 @@ class AdvancedNode3DLabel(NodeBase):
         self.layoutH6V2 = QVBoxLayout()
         self.lOnTop = QLabel("On Top")
         self.OnTop = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.OnTop)
         self.layoutH6V2.addWidget(self.lOnTop)
         self.layoutH6V2.addWidget(self.OnTop)
         self.layoutH6.addLayout(self.layoutH6V1)
@@ -1161,11 +1167,11 @@ class AdvancedNode3DLabel(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH7.addWidget(self.Delete)
         self.layoutH7.addWidget(self.Run)
@@ -1181,17 +1187,17 @@ class AdvancedNode3DLabel(NodeBase):
     
     def updateHeight(self):
         if self.Height.currentText() == "Fixed":
-            self.HeightValue.setEnabled(False)
+            changeEnabled(self.HeightValue, False) 
         elif self.Height.currentText() == "Custom":
-            self.HeightValue.setEnabled(True)
+            changeEnabled(self.HeightValue, True) 
             
 
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.used_model != [] and self.Text.text() != "" and self.TextColorPicked is not None:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -1259,7 +1265,7 @@ class AdvancedNode3DLabel(NodeBase):
                 height = f"height fixed"
             elif self.Height.currentText() == "Custom":
                 height = f"height {self.HeightValue.getText()}"
-                self.HeightValue.setEnabled(True)
+                changeEnabled(self.HeightValue, True) 
             self.script_string += f"label {objects} {label} {text_color} {bg_color} {height} size {self.Size.getText()} font \"{self.Font.currentText()}\" offset {self.OffsetX.getText()},{self.OffsetY.getText()},{self.OffsetZ.getText()} onTop {self.OnTop.isChecked()}<br>"
             self.script_string += f"<br>"
         
@@ -1267,18 +1273,18 @@ class AdvancedNode3DLabel(NodeBase):
 
     def openTextColorDialog(self):
         self.TextColorPicked = self.TextColorDialog.getColor()
-        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); }}")
         self.internal_updateRun()
         
     def updateTextColor(self):
-        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.TextColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.TextColorPicked.getRgb()[0]},{self.TextColorPicked.getRgb()[1]},{self.TextColorPicked.getRgb()[2]}); }}")
         
     def openBackgroundColorDialog(self):
         self.BackgroundColorPicked = self.BackgroundColorDialog.getColor()
-        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); }}")
         
     def updateBackgroundColor(self):
-        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); border: 1px solid black}}")
+        self.BackgroundColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.BackgroundColorPicked.getRgb()[0]},{self.BackgroundColorPicked.getRgb()[1]},{self.BackgroundColorPicked.getRgb()[2]}); }}")
         
 class AdvancedNodeMovement(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -1295,7 +1301,6 @@ class AdvancedNodeMovement(NodeBase):
         self.layoutH1 = QHBoxLayout()
         self.lCofr = QLabel("Move to center of rotation")
         self.Cofr = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Cofr)
         self.Cofr.stateChanged.connect(self.updateMove)
         self.layoutH1.addWidget(self.lCofr)
         self.layoutH1.addWidget(self.Cofr)
@@ -1318,11 +1323,11 @@ class AdvancedNodeMovement(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
@@ -1335,9 +1340,9 @@ class AdvancedNodeMovement(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.used_model != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -1386,15 +1391,15 @@ class AdvancedNodeMovement(NodeBase):
 
     def updateMove(self):
         if self.Cofr.isChecked():
-            self.MoveX.setEnabled(False)
-            self.MoveY.setEnabled(False)
-            self.MoveZ.setEnabled(False)
+            changeEnabled(self.MoveX, False) 
+            changeEnabled(self.MoveY, False) 
+            changeEnabled(self.MoveZ, False) 
         else:
-            self.MoveX.setEnabled(True)
-            self.MoveY.setEnabled(True)
-            self.MoveZ.setEnabled(True)
+            changeEnabled(self.MoveX, True) 
+            changeEnabled(self.MoveY, True) 
+            changeEnabled(self.MoveZ, True) 
 
-class AdvancedNodeRotation(NodeBase):
+class AdvancedNodeTurn(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
         super().__init__(session, summary, title, simple_node=False, parent=parent)
 
@@ -1415,7 +1420,6 @@ class AdvancedNodeRotation(NodeBase):
         self.lRelativeAxis.setWordWrap(True)
         self.RelativeAxis = QSwitchControl(self.summary.node.scene.parent)
         self.RelativeAxis.stateChanged.connect(self.updateImportance)
-        self.summary.node.scene.parent.switches.append(self.RelativeAxis)
         self.RelativeAxis.setChecked(True)
         self.layoutH1.addWidget(self.lAxis)     
         self.layoutH1.addWidget(self.Axis, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -1429,43 +1433,20 @@ class AdvancedNodeRotation(NodeBase):
         self.Frames.Text.textChanged.connect(self.summary.updateFrames)
         
         self.layoutH2 = QHBoxLayout()
-        self.Tab = QTabWidget()    
-        self.container1 = QWidget()   
-        self.layoutH1T1H1 = QHBoxLayout(self.container1)
-        self.container2 = QWidget()
-        self.layoutH1T2H1 = QHBoxLayout(self.container2)
-        self.RockCycle = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Cycle")
-        self.RockCycle.setText("0")
-        self.layoutH1T2H1.addLayout(self.RockCycle.widget_layout)
-        self.container3 = QWidget()
-        self.layoutH1T3H1 = QHBoxLayout(self.container3)
-        self.WobbleCycle = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Cycle")
-        self.WobbleCycle.setText("0")
-        self.WobbleAspect = QNumEdit(min=None, max=None, step=1, decimals=1, addSlider=False, label="Wobble Aspect")
-        self.WobbleAspect.setText("0.3")
-        self.layoutH1T3H1.addLayout(self.WobbleCycle.widget_layout)
-        self.layoutH1T3H1.addLayout(self.WobbleAspect.widget_layout)
-        self.Tab.insertTab(0, self.container1, "Turn")
-        self.Tab.insertTab(1, self.container2, "Rock")
-        self.Tab.insertTab(2, self.container3, "Wobble")
-        self.Tab.setFixedWidth(200)
-        self.layoutH2.addWidget(self.Tab)
-        
-        self.layoutH3 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
         self.Delete.setFixedWidth(60)
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
-        self.layoutH3.addWidget(self.Delete)
-        self.layoutH3.addWidget(self.Run)
-        self.layoutH3.addWidget(self.RunChain)
+        self.layoutH2.addWidget(self.Delete)
+        self.layoutH2.addWidget(self.Run)
+        self.layoutH2.addWidget(self.RunChain)
 
         self.RelativeAxis.stateChanged.connect(self.internal_updateRun)
 
@@ -1473,27 +1454,25 @@ class AdvancedNodeRotation(NodeBase):
         self.main_layout.addLayout(self.Angle.widget_layout)
         self.main_layout.addLayout(self.Frames.widget_layout)
         self.main_layout.addLayout(self.layoutH2)        
-        self.main_layout.addLayout(self.layoutH3)        
 
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.RelativeAxis.isChecked():
             if self.summary.used_center != []:
                 if self.summary.used_model != []:
-                    self.Run.setEnabled(True)
+                    changeEnabled(self.Run, True) 
                 else:
-                    self.Run.setEnabled(False)
+                    changeEnabled(self.Run, False) 
             else:
-                self.Run.setEnabled(False)
+                changeEnabled(self.Run, False) 
         else:
             if self.summary.used_model != []:
-                self.Run.setEnabled(True)
+                changeEnabled(self.Run, True) 
             else:
-                self.Run.setEnabled(False)
+                changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
-
 
     def updateTab(self, current_type:int):
         pass
@@ -1537,22 +1516,314 @@ class AdvancedNodeRotation(NodeBase):
                 if center_object == "All":
                     center_object = "all"
                 if self.RelativeAxis.isChecked() and center_object != "all":
-                    center = f"coordinateSystem {center_object} center {center_object}"
+                    center = f"coordinateSystem {center_object} center {center_object} "
                 else:
-                    center = f"center {center_object}"
+                    center = f"center {center_object} "
 
             objects = "".join(self.summary.picker_model)
             if objects == "All":
                 objects = f""
             else:
-                objects = f" atoms <i>'{objects.lower()}'</i>"
+                objects = f"models <i>'{objects.lower()}'</i>"
 
-            if self.Tab.currentIndex() == 0:
-                rotationSpecific = f""
-            elif self.Tab.currentIndex() == 1:
-                rotationSpecific = f"rock {self.RockCycle.getText()} "
-            elif self.Tab.currentIndex() == 2:
-                rotationSpecific = f"wobble {self.WobbleCycle.getText()} wobbleAspect {self.WobbleAspect.getText()} "
+            self.script_string += f"turn {self.Axis.currentText().lower()} {self.Angle.getText()} {self.Frames.getText()} {center}{objects}<br>"
+            self.script_string += f"<br>"
+        
+        return [self.start_script_string, self.script_string, self.end_script_string]    
+
+    def updateImportance(self):
+        if self.RelativeAxis.isChecked():
+            self.summary.CenterImportant.setProperty("important", "True")
+        else:
+            self.summary.CenterImportant.setProperty("important", "False")
+        self.summary.CenterImportant.style().unpolish(self.summary.CenterImportant)
+        self.summary.CenterImportant.style().polish(self.summary.CenterImportant)
+
+class AdvancedNodeRock(NodeBase):
+    def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
+        super().__init__(session, summary, title, simple_node=False, parent=parent)
+
+        self.initUI()
+
+    def initUI(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setSpacing(5)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.setLayout(self.main_layout)
+
+        self.layoutH1 = QHBoxLayout()
+        self.lAxis = QLabel("Axis")
+        self.Axis = QComboBox()
+        self.Axis.addItems(["X", "Y", "Z"])
+        self.Axis.setCurrentIndex(0)
+        self.lRelativeAxis = QLabel("Use Relative Axis")
+        self.lRelativeAxis.setWordWrap(True)
+        self.RelativeAxis = QSwitchControl(self.summary.node.scene.parent)
+        self.RelativeAxis.stateChanged.connect(self.updateImportance)
+        self.RelativeAxis.setChecked(True)
+        self.layoutH1.addWidget(self.lAxis)     
+        self.layoutH1.addWidget(self.Axis, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layoutH1.addWidget(self.lRelativeAxis)
+        self.layoutH1.addWidget(self.RelativeAxis, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.Angle = QNumEdit(min=0, max=360, step=1, decimals=1, addSlider=True, label="Angle")
+        self.Angle.setText("90")
+        self.Frames = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Frames")
+        self.Frames.setText("1")
+        self.Frames.Text.textChanged.connect(self.summary.updateFrames)
+        
+        self.layoutH2 = QHBoxLayout()
+        self.RockCycle = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Cycle")
+        self.RockCycle.setText("0")
+        self.layoutH2.addLayout(self.RockCycle.widget_layout)
+        
+        self.layoutH3 = QHBoxLayout()
+        self.Delete = QPushButton("Delete")
+        self.Delete.setFixedWidth(60)
+        self.Delete.clicked.connect(self.deleteNode) 
+        self.Run = QPushButton("Run")
+        self.Run.setFixedWidth(50)
+        changeEnabled(self.Run, False) 
+        self.Run.clicked.connect(self.startRunCommand)
+        self.RunChain = QPushButton("Run Chain")
+        self.RunChain.setFixedWidth(75)
+        changeEnabled(self.RunChain, False) 
+        self.RunChain.clicked.connect(self.runCommandChain)
+        self.layoutH3.addWidget(self.Delete)
+        self.layoutH3.addWidget(self.Run)
+        self.layoutH3.addWidget(self.RunChain)
+
+        self.RelativeAxis.stateChanged.connect(self.internal_updateRun)
+
+        self.main_layout.addLayout(self.layoutH1)        
+        self.main_layout.addLayout(self.Angle.widget_layout)
+        self.main_layout.addLayout(self.Frames.widget_layout)
+        self.main_layout.addLayout(self.layoutH2)        
+        self.main_layout.addLayout(self.layoutH3)        
+
+    def updateRun(self, chain_update:bool=False):
+        current_run = self.Run.isEnabled()
+        if self.RelativeAxis.isChecked():
+            if self.summary.used_center != []:
+                if self.summary.used_model != []:
+                    changeEnabled(self.Run, True) 
+                else:
+                    changeEnabled(self.Run, False) 
+            else:
+                changeEnabled(self.Run, False)
+        else:
+            if self.summary.used_model != []:
+                changeEnabled(self.Run, True) 
+            else:
+                changeEnabled(self.Run, False) 
+        if current_run != self.Run.isEnabled():
+            if not chain_update:
+                self.summary.findLastNode()
+
+    def updateTab(self, current_type:int):
+        pass
+    
+    def updateComment(self) -> list[str]:
+        start_script_string_comment = f""
+        script_string_comment = f"<u><b>{self.summary.node.nodeType.name}: {self.summary.node.nodeID}</b></u><br>"
+        end_script_string_comment = f""
+
+        if self.Run.isEnabled():
+            objects = "".join(self.summary.used_model)
+            if objects == "All":
+                objects = "all models"
+
+            if self.RelativeAxis.isChecked():
+                relative = "relative "
+            else:
+                relative = ""
+
+            script_string_comment += f"Rotates <i>'{objects}'</i> around the {relative}{self.Axis.currentText().upper()} axis by {self.Angle.getText()}° for {self.Frames.getText()} frames<br>"
+
+            center_object = "".join(self.summary.used_center)
+            if self.summary.used_center is not None and center_object != "":
+                if center_object == "All":
+                    script_string_comment += f"Center of rotation is center of all of the objects<br>"
+                else:
+                    script_string_comment += f"Center of rotation is center of {center_object}<br>"
+            script_string_comment += f"<br>"
+        return [start_script_string_comment, script_string_comment, end_script_string_comment]
+
+    def updateCommand(self) -> list[str]:
+        super().updateCommand()
+
+        if self.Run.isEnabled():
+            center_object = "".join(self.summary.used_center)
+            if self.summary.used_center is None:
+                center = ""
+            elif center_object == "":
+                center = ""
+            else:
+                if center_object == "All":
+                    center_object = "all"
+                if self.RelativeAxis.isChecked() and center_object != "all":
+                    center = f"coordinateSystem {center_object} center {center_object} "
+                else:
+                    center = f"center {center_object} "
+
+            objects = "".join(self.summary.picker_model)
+            if objects == "All":
+                objects = f""
+            else:
+                objects = f"models <i>'{objects.lower()}'</i>"
+
+            rotationSpecific = f"rock {self.RockCycle.getText()} "
+
+            self.script_string += f"turn {self.Axis.currentText().lower()} {self.Angle.getText()} {self.Frames.getText()} {rotationSpecific}{center}{objects}<br>"
+            self.script_string += f"<br>"
+        
+        return [self.start_script_string, self.script_string, self.end_script_string]    
+
+    def updateImportance(self):
+        if self.RelativeAxis.isChecked():
+            self.summary.CenterImportant.setProperty("important", "True")
+        else:
+            self.summary.CenterImportant.setProperty("important", "False")
+        self.summary.CenterImportant.style().unpolish(self.summary.CenterImportant)
+        self.summary.CenterImportant.style().polish(self.summary.CenterImportant)
+
+class AdvancedNodeWobble(NodeBase):
+    def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
+        super().__init__(session, summary, title, simple_node=False, parent=parent)
+
+        self.initUI()
+
+    def initUI(self):
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setSpacing(5)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.setLayout(self.main_layout)
+
+        self.layoutH1 = QHBoxLayout()
+        self.lAxis = QLabel("Axis")
+        self.Axis = QComboBox()
+        self.Axis.addItems(["X", "Y", "Z"])
+        self.Axis.setCurrentIndex(0)
+        self.lRelativeAxis = QLabel("Use Relative Axis")
+        self.lRelativeAxis.setWordWrap(True)
+        self.RelativeAxis = QSwitchControl(self.summary.node.scene.parent)
+        self.RelativeAxis.stateChanged.connect(self.updateImportance)
+        self.RelativeAxis.setChecked(True)
+        self.layoutH1.addWidget(self.lAxis)     
+        self.layoutH1.addWidget(self.Axis, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.layoutH1.addWidget(self.lRelativeAxis)
+        self.layoutH1.addWidget(self.RelativeAxis, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.Angle = QNumEdit(min=0, max=360, step=1, decimals=1, addSlider=True, label="Angle")
+        self.Angle.setText("90")
+        self.Frames = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Frames")
+        self.Frames.setText("1")
+        self.Frames.Text.textChanged.connect(self.summary.updateFrames)
+        
+        self.layoutH2 = QHBoxLayout()
+        self.WobbleCycle = QNumEdit(min=0, max=None, step=1, decimals=0, addSlider=False, label="Cycle")
+        self.WobbleCycle.setText("0")
+        self.WobbleAspect = QNumEdit(min=None, max=None, step=1, decimals=1, addSlider=False, label="Wobble Aspect")
+        self.WobbleAspect.setText("0.3")
+        self.layoutH2.addLayout(self.WobbleCycle.widget_layout)
+        self.layoutH2.addLayout(self.WobbleAspect.widget_layout)
+        
+        self.layoutH3 = QHBoxLayout()
+        self.Delete = QPushButton("Delete")
+        self.Delete.setFixedWidth(60)
+        self.Delete.clicked.connect(self.deleteNode) 
+        self.Run = QPushButton("Run")
+        self.Run.setFixedWidth(50)
+        changeEnabled(self.Run, False) 
+        self.Run.clicked.connect(self.startRunCommand)
+        self.RunChain = QPushButton("Run Chain")
+        self.RunChain.setFixedWidth(75)
+        changeEnabled(self.RunChain, False) 
+        self.RunChain.clicked.connect(self.runCommandChain)
+        self.layoutH3.addWidget(self.Delete)
+        self.layoutH3.addWidget(self.Run)
+        self.layoutH3.addWidget(self.RunChain)
+
+        self.RelativeAxis.stateChanged.connect(self.internal_updateRun)
+
+        self.main_layout.addLayout(self.layoutH1)        
+        self.main_layout.addLayout(self.Angle.widget_layout)
+        self.main_layout.addLayout(self.Frames.widget_layout)
+        self.main_layout.addLayout(self.layoutH2)        
+        self.main_layout.addLayout(self.layoutH3)        
+
+    def updateRun(self, chain_update:bool=False):
+        current_run = self.Run.isEnabled()
+        if self.RelativeAxis.isChecked():
+            if self.summary.used_center != []:
+                if self.summary.used_model != []:
+                    changeEnabled(self.Run, True) 
+                else:
+                    changeEnabled(self.Run, False) 
+            else:
+                changeEnabled(self.Run, False) 
+        else:
+            if self.summary.used_model != []:
+                changeEnabled(self.Run, True) 
+            else:
+                changeEnabled(self.Run, False) 
+        if current_run != self.Run.isEnabled():
+            if not chain_update:
+                self.summary.findLastNode()
+
+    def updateTab(self, current_type:int):
+        pass
+    
+    def updateComment(self) -> list[str]:
+        start_script_string_comment = f""
+        script_string_comment = f"<u><b>{self.summary.node.nodeType.name}: {self.summary.node.nodeID}</b></u><br>"
+        end_script_string_comment = f""
+
+        if self.Run.isEnabled():
+            objects = "".join(self.summary.used_model)
+            if objects == "All":
+                objects = "all models"
+
+            if self.RelativeAxis.isChecked():
+                relative = "relative "
+            else:
+                relative = ""
+
+            script_string_comment += f"Rotates <i>'{objects}'</i> around the {relative}{self.Axis.currentText().upper()} axis by {self.Angle.getText()}° for {self.Frames.getText()} frames<br>"
+
+            center_object = "".join(self.summary.used_center)
+            if self.summary.used_center is not None and center_object != "":
+                if center_object == "All":
+                    script_string_comment += f"Center of rotation is center of all of the objects<br>"
+                else:
+                    script_string_comment += f"Center of rotation is center of {center_object}<br>"
+            script_string_comment += f"<br>"
+        return [start_script_string_comment, script_string_comment, end_script_string_comment]
+
+    def updateCommand(self) -> list[str]:
+        super().updateCommand()
+
+        if self.Run.isEnabled():
+            center_object = "".join(self.summary.used_center)
+            if self.summary.used_center is None:
+                center = ""
+            elif center_object == "":
+                center = ""
+            else:
+                if center_object == "All":
+                    center_object = "all"
+                if self.RelativeAxis.isChecked() and center_object != "all":
+                    center = f"coordinateSystem {center_object} center {center_object} "
+                else:
+                    center = f"center {center_object} "
+
+            objects = "".join(self.summary.picker_model)
+            if objects == "All":
+                objects = f""
+            else:
+                objects = f"models <i>'{objects.lower()}'</i>"
+
+            rotationSpecific = f"wobble {self.WobbleCycle.getText()} wobbleAspect {self.WobbleAspect.getText()} "
             
             self.script_string += f"turn {self.Axis.currentText().lower()} {self.Angle.getText()} {self.Frames.getText()} {rotationSpecific}{center}{objects}<br>"
             self.script_string += f"<br>"
@@ -1599,11 +1870,11 @@ class AdvancedNodeCenterRotation(NodeBase):
 
         self.Length = QNumEdit(min=0.01, max=None, step=1, decimals=2, addSlider=False, label="Length")
         self.Length.setText("2")
-        self.Length.setEnabled(False)
+        changeEnabled(self.Length, False) 
 
         self.Radius = QNumEdit(min=0, max=None, step=1, decimals=2, addSlider=False, label="Radius")
         self.Radius.setText("0.05")
-        self.Radius.setEnabled(False)
+        changeEnabled(self.Radius, False) 
 
         self.layoutH3 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
@@ -1611,11 +1882,11 @@ class AdvancedNodeCenterRotation(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
@@ -1630,9 +1901,9 @@ class AdvancedNodeCenterRotation(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.used_center != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -1689,13 +1960,13 @@ class AdvancedNodeCenterRotation(NodeBase):
 
     def updatePivot(self):
         if self.Pivot.currentText() == "Custom":
-            self.Length.setEnabled(True)
-            self.Radius.setEnabled(True)
+            changeEnabled(self.Length, True) 
+            changeEnabled(self.Radius, True) 
         else:
             self.Length.setText("2")
-            self.Length.setEnabled(False)
+            changeEnabled(self.Length, False) 
             self.Length.setText("0.05")
-            self.Radius.setEnabled(False)
+            changeEnabled(self.Radius, False) 
 
 class AdvancedNodeCenterMass(NodeBase):
     def __init__(self, session, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -1717,7 +1988,6 @@ class AdvancedNodeCenterMass(NodeBase):
         self.lMark = QLabel("Mark")
         self.Mark = QSwitchControl(self.summary.node.scene.parent)
         self.Mark.setChecked(True)
-        self.summary.node.scene.parent.switches.append(self.Mark)
         self.Mark.stateChanged.connect(self.updateRadius)
         self.Mark.stateChanged.connect(self.internal_updateRun)
         self.layoutH1.addWidget(self.lName)
@@ -1727,7 +1997,7 @@ class AdvancedNodeCenterMass(NodeBase):
 
         self.Radius = QNumEdit(min=0, max=None, step=1, decimals=2, addSlider=False, label="Radius")
         self.Radius.setText("0.05")
-        self.Radius.setEnabled(False)
+        changeEnabled(self.Radius, True) 
 
         self.layoutH2 = QHBoxLayout()
         self.MarkColor = QPushButton("Mark Color")    
@@ -1736,7 +2006,8 @@ class AdvancedNodeCenterMass(NodeBase):
         self.MarkColorLabel = QLabel()   
         self.MarkColorLabel.setFixedWidth(50)
         self.MarkColorLabel.setFixedHeight(50)        
-        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color: {self.MarkColorValue.name()}; border: 1px solid black}}")
+        self.MarkColorLabel.setObjectName("color")
+        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color: {self.MarkColorValue.name()}; }}")
         self.layoutH2.addWidget(self.MarkColor)
         self.layoutH2.addWidget(self.MarkColorLabel)
 
@@ -1746,11 +2017,11 @@ class AdvancedNodeCenterMass(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
@@ -1764,18 +2035,18 @@ class AdvancedNodeCenterMass(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if self.summary.used_model != [] and ((self.Mark.isChecked()) or not self.Mark.isChecked()):
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
 
     def updateRadius(self):
         if self.Mark.isChecked():
-            self.Radius.setEnabled(True)
+            changeEnabled(self.Radius, True) 
         else:
-            self.Radius.setEnabled(False)
+            changeEnabled(self.Radius, False) 
 
     def updateTab(self, current_type:int):
         pass
@@ -1789,9 +2060,11 @@ class AdvancedNodeCenterMass(NodeBase):
             objects = "".join(self.summary.used_model)
             if objects == "All":
                 objects = "all models"
+            else:
+                objects = objects.replace("#","")
                 
             if self.Name.text() == "":
-                name = f"name mass-<i>'{objects}'</i>"
+                name = f"name CoM-<i>'Model {objects}'</i>"
             else:
                 name = f"name {self.Name.text()}"
 
@@ -1835,17 +2108,11 @@ class AdvancedNodeCenterMass(NodeBase):
 
     def openMarkColorDialog(self):
         self.MarkColorValue = self.MarkColorDialog.getColor()
-        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.MarkColorValue.getRgb()[0]},{self.MarkColorValue.getRgb()[1]},{self.MarkColorValue.getRgb()[2]}); border: 1px solid black}}")
+        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.MarkColorValue.getRgb()[0]},{self.MarkColorValue.getRgb()[1]},{self.MarkColorValue.getRgb()[2]}); }}")
         self.updateRun()
 
     def updateMarkColorLabel(self):        
-        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.MarkColorValue.getRgb()[0]},{self.MarkColorValue.getRgb()[1]},{self.MarkColorValue.getRgb()[2]}); border: 1px solid black}}")
-
-    def updateNode(self):
-        if self.Center.currentText() == "Mass":
-            self.CenterSelect.setEnabled(True)
-        else:
-            self.CenterSelect.setEnabled(False)
+        self.MarkColorLabel.setStyleSheet(f"QLabel {{ background-color : rgb({self.MarkColorValue.getRgb()[0]},{self.MarkColorValue.getRgb()[1]},{self.MarkColorValue.getRgb()[2]}); }}")
 
 class AdvancedNodeDelete(NodeBase):
     def __init__(self, session, scene:Scene, summary:AdvancedNodeSummary, title:str="", parent=None):
@@ -1875,7 +2142,6 @@ class AdvancedNodeDelete(NodeBase):
         self.lAttachedHyds.setWordWrap(True)
         self.lAttachedHyds.setFixedHeight(40)
         self.AttachedHyds = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.AttachedHyds)
         self.layoutH2.addWidget(self.lAttachedHyds, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.layoutH2.addWidget(self.AttachedHyds, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -1885,7 +2151,7 @@ class AdvancedNodeDelete(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.layoutH3.addWidget(self.Delete)
         self.layoutH3.addWidget(self.Run)
@@ -1896,9 +2162,9 @@ class AdvancedNodeDelete(NodeBase):
         
     def updateRun(self, chain_update:bool=False):
         if self.summary.picker_delete != []:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         
     def updateTab(self, current_type:int):
         self.current_type = current_type
@@ -1906,20 +2172,12 @@ class AdvancedNodeDelete(NodeBase):
         if self.current_type == 0:
             self.Type.addItems(["Atoms", "Residues", "Models", "Bonds", "Pseudobonds"])
             self.Type.setCurrentIndex(0)
-            self.Type.setEnabled(True)
-            self.AttachedHyds.setEnabled(True)
-        elif self.current_type == 1:
+            changeEnabled(self.Type, True) 
+            changeEnabled(self.AttachedHyds, True) 
+        elif self.current_type == 1 or self.current_type == 2 or self.current_type == 3:
             self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
-        elif self.current_type == 2:
-            self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
-        elif self.current_type == 3:
-            self.Type.addItems([])
-            self.Type.setEnabled(False)
-            self.AttachedHyds.setEnabled(False)
+            changeEnabled(self.Type, False) 
+            changeEnabled(self.AttachedHyds, False) 
 
     def updateComment(self) -> list[str]:
         start_script_string_comment = f""
@@ -1992,7 +2250,7 @@ class AdvancedNodeWait(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH1.addWidget(self.Delete)
         self.layoutH1.addWidget(self.RunChain)
@@ -2050,7 +2308,7 @@ class AdvancedNodeCrossfade(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH1.addWidget(self.Delete)
         self.layoutH1.addWidget(self.RunChain)
@@ -2107,7 +2365,7 @@ class AdvancedNodeSaveView(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
@@ -2117,9 +2375,9 @@ class AdvancedNodeSaveView(NodeBase):
 
     def updateRun(self, chain_update:bool=False):
         if self.Name.text() == "":
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         else:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
 
     def updateTab(self, current_type:int):
         pass
@@ -2169,13 +2427,11 @@ class AdvancedNodeLoadView(NodeBase):
         self.layoutV1H2V1 = QVBoxLayout()
         self.lClip = QLabel("Clip")
         self.Clip = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Clip)
         self.layoutV1H2V1.addWidget(self.lClip)
         self.layoutV1H2V1.addWidget(self.Clip)
         self.layoutV1H2V2 = QVBoxLayout()
         self.lCofr = QLabel("Cofr")
         self.Cofr = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Cofr)
         self.layoutV1H2V2.addWidget(self.lCofr)
         self.layoutV1H2V2.addWidget(self.Cofr)
         self.layoutV1H2.addLayout(self.layoutV1H2V1)
@@ -2192,11 +2448,11 @@ class AdvancedNodeLoadView(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH1.addWidget(self.Delete)
         self.layoutH1.addWidget(self.Run)
@@ -2208,9 +2464,9 @@ class AdvancedNodeLoadView(NodeBase):
     def updateRun(self, chain_update:bool=False):
         current_run = self.Run.isEnabled()
         if (self.View.currentText() == "Custom" and self.summary.used_view == []):
-            self.Run.setEnabled(False)
+            changeEnabled(self.Run, False) 
         else:
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode()
@@ -2302,7 +2558,7 @@ class AdvancedNodeFly(NodeBase):
         self.layoutH1 = QHBoxLayout()
         self.Transition = QComboBox()
         self.Transition.currentIndexChanged.connect(self.changeFlySequence)
-        self.Transition.setEnabled(False)  
+        changeEnabled(self.Transition, False) 
         self.Transition.setFixedWidth(200)
         self.layoutH1.addWidget(self.Transition, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -2316,11 +2572,11 @@ class AdvancedNodeFly(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.RunChain = QPushButton("Run Chain")
         self.RunChain.setFixedWidth(75)
-        self.RunChain.setEnabled(False)
+        changeEnabled(self.RunChain, False) 
         self.RunChain.clicked.connect(self.runCommandChain)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
@@ -2333,13 +2589,13 @@ class AdvancedNodeFly(NodeBase):
     def updateRun(self, chain_update:bool=False): 
         current_run = self.Run.isEnabled()  
         if self.summary.used_fly_groups != [] and len(self.summary.used_fly_groups) > 1: 
-            self.Transition.setEnabled(True)
-            self.Frames.setEnabled(True)
-            self.Run.setEnabled(True)
+            changeEnabled(self.Transition, True) 
+            changeEnabled(self.Frames, True) 
+            changeEnabled(self.Run, True) 
         else:
-            self.Transition.setEnabled(False)
-            self.Frames.setEnabled(False)
-            self.Run.setEnabled(False)   
+            changeEnabled(self.Transition, False) 
+            changeEnabled(self.Frames, False) 
+            changeEnabled(self.Run, False) 
         if current_run != self.Run.isEnabled():
             if not chain_update:
                 self.summary.findLastNode() 
@@ -2410,7 +2666,7 @@ class AdvancedNodeFly(NodeBase):
         self.generateFlySequences()
         self.switchFlySequence()
 
-    def removeFlySequence(self, row_indexes, selected_len:int):
+    def removeFlySequence(self, row_indexes:list, selected_len:int):
         self.updateUsedFlySequences()
         self.updateFlySequence()
         for index in sorted(row_indexes, reverse=True):
@@ -2471,7 +2727,7 @@ class AdvancedNodeSplit(NodeBase):
         self.setLayout(self.main_layout)
 
         self.Model = QComboBox()
-        self.Model.addItems(["Chains", "Ligands", "Connected", "Atoms"])
+        self.Model.addItems(["Chains", "Ligands", "Connected"])
 
         self.layoutH2 = QHBoxLayout()
         self.Delete = QPushButton("Delete")
@@ -2479,7 +2735,7 @@ class AdvancedNodeSplit(NodeBase):
         self.Delete.clicked.connect(self.deleteNode) 
         self.Run = QPushButton("Run")
         self.Run.setFixedWidth(50)
-        self.Run.setEnabled(False)
+        changeEnabled(self.Run, False) 
         self.Run.clicked.connect(self.startRunCommand)
         self.layoutH2.addWidget(self.Delete)
         self.layoutH2.addWidget(self.Run)
@@ -2489,9 +2745,9 @@ class AdvancedNodeSplit(NodeBase):
 
     def updateRun(self, chain_update:bool=False): 
         if self.summary.used_model != []: 
-            self.Run.setEnabled(True)
+            changeEnabled(self.Run, True) 
         else:
-            self.Run.setEnabled(False)   
+            changeEnabled(self.Run, False) 
                 
     def updateTab(self, current_type:int):
         pass
@@ -2558,7 +2814,6 @@ class AdvancedNodeEnd(NodeBase):
         self.layoutH3V1 = QVBoxLayout()
         self.lRoundtrip = QLabel("Roundtrip")
         self.Roundtrip = QSwitchControl(self.summary.node.scene.parent)
-        self.summary.node.scene.parent.switches.append(self.Roundtrip)
         self.layoutH3V2 = QVBoxLayout()
         self.lFormat = QLabel("Format")
         self.Format = QComboBox()
@@ -2715,14 +2970,14 @@ class AdvancedNodeSummary(QWidget):
             if model_input:
                 self.layoutH1 = QHBoxLayout()
                 self.ModelImportant = QCheckBox()
-                self.ModelImportant.setEnabled(False)
+                changeEnabled(self.ModelImportant, False) 
                 self.ModelImportant.setProperty("important", "True")
                 self.lModel = QLabel("Model:")
                 self.ModelToggle = QSwitchControl(self.node.scene.parent)
                 self.node.scene.parent.switches.append(self.ModelToggle)
                 self.ModelToggle.stateChanged.connect(self.updateModelPicker)
                 self.ModelCheck = QCheckBox()
-                self.ModelCheck.setEnabled(False)
+                changeEnabled(self.ModelCheck, False) 
                 self.layoutH1.addWidget(self.ModelImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lModel, alignment=Qt.AlignmentFlag.AlignLeft)
                 if NodeType(self.node.nodeType) != NodeType.Split:
@@ -2732,14 +2987,14 @@ class AdvancedNodeSummary(QWidget):
             if color_input:
                 self.layoutH1 = QHBoxLayout()
                 self.ColorImportant = QCheckBox()
-                self.ColorImportant.setEnabled(False)
+                changeEnabled(self.ColorImportant, False) 
                 self.ColorImportant.setProperty("important", "True")
                 self.lColor = QLabel("Color:")
                 self.ColorToggle = QSwitchControl(self.node.scene.parent)
                 self.node.scene.parent.switches.append(self.ColorToggle)
                 self.ColorToggle.stateChanged.connect(self.updateColorPicker)
                 self.ColorCheck = QCheckBox()
-                self.ColorCheck.setEnabled(False)
+                changeEnabled(self.ColorCheck, False) 
                 self.layoutH1.addWidget(self.ColorImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lColor, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.ColorToggle, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2748,8 +3003,8 @@ class AdvancedNodeSummary(QWidget):
             if center_input:
                 self.layoutH1 = QHBoxLayout()
                 self.CenterImportant = QCheckBox()
-                self.CenterImportant.setEnabled(False)
-                if NodeType(self.node.nodeType) != NodeType.Rotation:
+                changeEnabled(self.CenterImportant, False) 
+                if NodeType(self.node.nodeType) != NodeType.Turn or NodeType(self.node.nodeType) != NodeType.Rock or NodeType(self.node.nodeType) != NodeType.Wobble:
                     self.CenterImportant.setProperty("important", "True")
                 else:
                     self.CenterImportant.setProperty("important", "False")
@@ -2758,7 +3013,7 @@ class AdvancedNodeSummary(QWidget):
                 self.node.scene.parent.switches.append(self.CenterToggle)
                 self.CenterToggle.stateChanged.connect(self.updateCenterPicker)
                 self.CenterCheck = QCheckBox()
-                self.CenterCheck.setEnabled(False)
+                changeEnabled(self.CenterCheck, False) 
                 self.layoutH1.addWidget(self.CenterImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lCenter, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.CenterToggle, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2767,14 +3022,14 @@ class AdvancedNodeSummary(QWidget):
             if view_input:
                 self.layoutH1 = QHBoxLayout()
                 self.ViewImportant = QCheckBox()
-                self.ViewImportant.setEnabled(False)
+                changeEnabled(self.ViewImportant, False) 
                 self.ViewImportant.setProperty("important", "True")
                 self.lView = QLabel("View:")
                 self.ViewToggle = QSwitchControl(self.node.scene.parent)
                 self.node.scene.parent.switches.append(self.ViewToggle)
                 self.ViewToggle.stateChanged.connect(self.updateViewPicker)
                 self.ViewCheck = QCheckBox()
-                self.ViewCheck.setEnabled(False)
+                changeEnabled(self.ViewCheck, False) 
                 self.layoutH1.addWidget(self.ViewImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lView, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.ViewToggle, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2783,14 +3038,14 @@ class AdvancedNodeSummary(QWidget):
             if fly_input:
                 self.layoutH1 = QHBoxLayout()
                 self.FlyImportant = QCheckBox()
-                self.FlyImportant.setEnabled(False)
+                changeEnabled(self.FlyImportant, False) 
                 self.FlyImportant.setProperty("important", "True")
                 self.lFly = QLabel("Fly:")
                 self.FlyToggle = QSwitchControl(self.node.scene.parent)
                 self.node.scene.parent.switches.append(self.FlyToggle)
                 self.FlyToggle.stateChanged.connect(self.updateFlyPicker)
                 self.FlyCheck = QCheckBox()
-                self.FlyCheck.setEnabled(False)
+                changeEnabled(self.FlyCheck, False) 
                 self.layoutH1.addWidget(self.FlyImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lFly, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.FlyToggle, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2799,11 +3054,11 @@ class AdvancedNodeSummary(QWidget):
             if NodeType(self.node.nodeType) == NodeType.Delete:
                 self.layoutH1 = QHBoxLayout()
                 self.DeleteImportant = QCheckBox()
-                self.DeleteImportant.setEnabled(False)
+                changeEnabled(self.DeleteImportant, False) 
                 self.DeleteImportant.setProperty("important", "True")
                 self.lDelete = QLabel("Delete:")
                 self.DeleteCheck = QCheckBox()
-                self.DeleteCheck.setEnabled(False)
+                changeEnabled(self.DeleteCheck, False) 
                 self.layoutH1.addWidget(self.DeleteImportant, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.lDelete, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH1.addWidget(self.DeleteCheck, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2816,7 +3071,7 @@ class AdvancedNodeSummary(QWidget):
                 self.lTotalFrames = QLabel(f"Total Frames: {self.total_frames}")
                 self.layoutH3.addWidget(self.lTotalFrames, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.layoutH4 = QHBoxLayout()
-                self.lLength = QLabel(f"Length: {self.convertTime(0)}")
+                self.lLength = QLabel(f"Length: {convertTime(0)}")
                 self.layoutH4.addWidget(self.lLength, alignment=Qt.AlignmentFlag.AlignLeft)
                 self.main_layout.addLayout(self.layoutH2)
                 self.main_layout.addLayout(self.layoutH3)
@@ -2831,7 +3086,7 @@ class AdvancedNodeSummary(QWidget):
         if no_outputs:
             self.updateChainRun()
 
-    def updateChainRun(self, run_enabled:bool=True):
+    def updateChainRun(self, run_enabled:bool=True) -> bool:
         if run_enabled:
             if hasattr(self.node.content, "Run"):
                 run_enabled = self.node.content.Run.isEnabled()
@@ -2839,7 +3094,7 @@ class AdvancedNodeSummary(QWidget):
             if self.node.node_input.hasEdge():
                 run_enabled = self.node.node_input.edge.start_socket.node.summary.updateChainRun(run_enabled)
         if hasattr(self.node.content, "RunChain"):
-            self.node.content.RunChain.setEnabled(run_enabled)
+            changeEnabled(self.node.content.RunChain, run_enabled) 
         return run_enabled
     
     def updateModelPicker(self):
@@ -2859,7 +3114,9 @@ class AdvancedNodeSummary(QWidget):
         self.updateModel()
 
     def updateModel(self):
-        if self.ModelToggle.isChecked():
+        if NodeType(self.node.nodeType) == NodeType.Split:
+            self.used_model = self.picker_model
+        elif self.ModelToggle.isChecked():
             self.used_model = self.picker_model
         else:
             self.used_model = self.chain_model
@@ -3001,11 +3258,11 @@ class AdvancedNodeSummary(QWidget):
                 self.lFrames.setText(f"Frames: {self.accumulated_frames}")
                 self.used_frames = self.accumulated_frames
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
         elif NodeType(self.node.nodeType) == NodeType.Fly:
             frames = 0
             for frame in self.node.content.transition_frames:
@@ -3013,7 +3270,7 @@ class AdvancedNodeSummary(QWidget):
             self.used_frames = frames
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -3021,7 +3278,7 @@ class AdvancedNodeSummary(QWidget):
                 self.used_frames = 0
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames + self.used_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         no_output = True
         
         if self.node.node_output is not None:
@@ -3242,11 +3499,11 @@ class AdvancedNodeSummary(QWidget):
                 self.lFrames.setText(f"Frames: {self.accumulated_frames}")
                 self.used_frames = self.accumulated_frames
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
         elif NodeType(self.node.nodeType) == NodeType.Fly:
             frames = 0
             for frame in self.node.content.transition_frames:
@@ -3254,7 +3511,7 @@ class AdvancedNodeSummary(QWidget):
             self.used_frames = frames
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames + self.used_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -3262,7 +3519,7 @@ class AdvancedNodeSummary(QWidget):
                 self.used_frames = 0
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames + self.used_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         no_output=True
         if self.node.node_output is not None:
             if self.node.node_output.hasEdge():
@@ -3304,11 +3561,13 @@ class AdvancedNodeSummary(QWidget):
                 self.lFrames.setText(f"Frames: {self.accumulated_frames}")
                 self.used_frames = self.accumulated_frames
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         elif NodeType(self.node.nodeType) == NodeType.End:
             self.lFrames.setText(f"Frames: {self.accumulated_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames}")
-            self.lLength.setText(f"Length: {self.convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime(self.total_frames / int(self.node.content.Framerate.getText()))}")
+        elif NodeType(self.node.nodeType) == NodeType.Split:
+            pass
         elif NodeType(self.node.nodeType) == NodeType.Fly:
             frames = 0
             for frame in self.node.content.transition_frames:
@@ -3316,7 +3575,7 @@ class AdvancedNodeSummary(QWidget):
             self.used_frames = frames
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames + self.used_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         else:
             if hasattr(self.node.content, "Frames"):
                 self.used_frames = int(self.node.content.Frames.getText())
@@ -3324,7 +3583,7 @@ class AdvancedNodeSummary(QWidget):
                 self.used_frames = 0
             self.lFrames.setText(f"Frames: {self.accumulated_frames + self.used_frames}")
             self.lTotalFrames.setText(f"Total Frames: {self.total_frames + self.used_frames}")
-            self.lLength.setText(f"Length: {self.convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
+            self.lLength.setText(f"Length: {convertTime((self.total_frames + self.used_frames) / int(self.node.scene.parent.nodeEnd.content.Framerate.getText()))}")
         no_output=True
         if self.node.node_output is not None:
             if self.node.node_output.hasEdge():
@@ -3398,26 +3657,3 @@ class AdvancedNodeSummary(QWidget):
                 self.node.node_output.edge.end_socket.node.summary.resetOutputValues(reset_model, reset_color, reset_center, reset_view, reset_fly, reset_frames, update_frames)
         if no_output:
             self.updateChainRun()
-
-    def convertTime(self, value:int|float) -> str:
-        if value < 60:
-            return(f"{format(round(value, 2), '.2f')} Seconds")
-        else:
-            value = value / 60
-            if value < 60:
-                return(f"{format(round(value, 2), '.2f')} Minutes")
-            else:
-                value = value / 60
-                if value < 24:
-                    return(f"{format(round(value, 2), '.2f')} Hours")
-                else:
-                    value = value / 24
-                    if value < 7:
-                        return(f"{format(round(value, 2), '.2f')} Days")
-                    else:
-                        value = value / 7
-                        if value < 52.177457:
-                            return(f"{format(round(value, 2), '.2f')} Weeks")
-                        else:
-                            value = value / 52.177457
-                            return(f"{format(round(value, 2), '.2f')} Years")

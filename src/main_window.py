@@ -8,6 +8,7 @@ from chimerax.std_commands.view import NamedViews
 import os
 import time
 import queue
+from .util import *
 from .node import *
 from .edges import *
 from .graphics_scene import *
@@ -31,6 +32,7 @@ class NodeEditor(QWidget):
 
     def initUI(self):
         self.settings_menu = SettingsMenu(self.session, self)
+        self.help_menu = HelpMenu(self.session, self)
 
         self.command_queue = queue.Queue()
 
@@ -85,7 +87,9 @@ class NodeEditor(QWidget):
         self.script = QTextDocument()
         self.script_window_widget = QWidget(self)
         self.layoutS1V1 = QVBoxLayout()
+        self.layoutS1V1.setContentsMargins(0, 0, 0, 0)
         self.script_window = QTextEdit()
+        self.script_window.setCursor(Qt.CursorShape.ArrowCursor)
         self.script_window.setDocument(self.script)
         self.script_window.setReadOnly(True)
         self.script_window.hide()
@@ -120,27 +124,30 @@ class NodeEditor(QWidget):
         self.run_button.clicked.connect(self.runScript)
         self.viewer_button = QPushButton("Viewer: None")
         self.viewer_button.setProperty("State", "None")
-        self.viewer_button.setEnabled(False)
+        changeEnabled(self.viewer_button, False)
         self.viewer_button.clicked.connect(self.scriptWindow)
         self.mode_button = QPushButton("Mode: Simple")
         self.mode_button.setProperty("State", "Simple")
         self.mode_button.clicked.connect(self.ToggleMode)
         self.light_mode = QLabel()
         self.light_mode.setObjectName("light_mode")
-        self.light_mode.setFixedHeight(20)
-        self.light_mode.setFixedWidth(20)
-        self.theme_toggle = QSwitchControl(self, checked=True)
+        self.light_mode.setFixedHeight(30)
+        self.light_mode.setFixedWidth(30)
+        self.theme_toggle = QSwitchControl(self, checked=True, radius=20)
         self.switches.append(self.theme_toggle)
         self.theme_toggle.stateChanged.connect(self.changeStyle)
         self.theme_toggle.setObjectName("theme_toggle")
         self.dark_mode = QLabel()
         self.dark_mode.setObjectName("dark_mode")
-        self.dark_mode.setFixedHeight(20)
-        self.dark_mode.setFixedWidth(20)
+        self.dark_mode.setFixedHeight(30)
+        self.dark_mode.setFixedWidth(30)
         self.settings_button = QPushButton("")
         self.settings_button.setProperty("State", "Closed")
         self.settings_button.setObjectName("settings_button")
         self.settings_button.clicked.connect(self.settings_menu.openSettings)
+        self.help_button = QPushButton("")
+        self.help_button.setObjectName("help_button")
+        self.help_button.clicked.connect(self.help_menu.openHelp)
         self.layoutG1.addWidget(self.presets_box, 0, 0, 1, 1)
         self.layoutG1.addWidget(self.load_button, 1, 0, 1, 1)
         self.layoutG1.addWidget(self.center_button, 0, 1, 1, 1)
@@ -149,10 +156,11 @@ class NodeEditor(QWidget):
         self.layoutG1.addWidget(self.run_button, 1, 2, 1, 1)
         self.layoutG1.addWidget(self.viewer_button, 0, 3, 1, 1)
         self.layoutG1.addWidget(self.mode_button, 1, 3, 1, 1)
-        self.layoutG1.addWidget(self.light_mode, 0, 4, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layoutG1.addWidget(self.theme_toggle, 0, 5, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layoutG1.addWidget(self.dark_mode, 0, 6, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layoutG1.addWidget(self.light_mode, 0, 4, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layoutG1.addWidget(self.theme_toggle, 0, 6, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layoutG1.addWidget(self.dark_mode, 0, 8, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layoutG1.addWidget(self.settings_button, 1, 4, 1, 3, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layoutG1.addWidget(self.help_button, 1, 7, 1, 3, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layoutG1.setColumnStretch(0, 2)  
         self.layoutG1.setColumnStretch(1, 2)  
         self.layoutG1.setColumnStretch(2, 2)  
@@ -168,7 +176,11 @@ class NodeEditor(QWidget):
 
         self.settings_menu.raise_()
 
+        self.scene.grScene.addItem(self.help_menu.grHelp)
+
         self.changeStyle()
+
+        changeCursor(self.children())
 
         self.script_thread = ScriptJob(self.session, self)
         self.script_thread.start()
@@ -176,10 +188,9 @@ class NodeEditor(QWidget):
         self.model_thread.start()
         self.command_thread = CommandJob(self.session, self)
         self.command_thread.start()
-    
         
     @pyqtSlot(str)
-    def runCommand(self, command):
+    def runCommand(self, command:str):
         commands.run(self.session, self.strip_html_tags(command))
         if '#' in command:
             cmd = []
@@ -203,17 +214,17 @@ class NodeEditor(QWidget):
         self.presets.prepare_presets()
         if self.mode_button.property("State") == "Simple":
             self.loaded_presets = self.presets.simple_prestes
-        elif self.mode_button.property("State") == "Expert":
-            self.loaded_presets = self.presets.expert_prestes
+        elif self.mode_button.property("State") == "Advanced":
+            self.loaded_presets = self.presets.advanced_prestes
         self.presets_box.clear()
         self.presets_box.addItems(self.loaded_presets.keys())
 
     def ToggleMode(self):
         if self.mode_button.property("State") == "Simple":
-            self.mode_button.setProperty("State", "Expert")
-            self.mode_button.setText("Mode: Expert")
-            self.loaded_presets = self.presets.expert_prestes
-        elif self.mode_button.property("State") == "Expert":
+            self.mode_button.setProperty("State", "Advanced")
+            self.mode_button.setText("Mode: Advanced")
+            self.loaded_presets = self.presets.advanced_prestes
+        elif self.mode_button.property("State") == "Advanced":
             self.mode_button.setProperty("State", "Simple")
             self.mode_button.setText("Mode: Simple")
             self.loaded_presets = self.presets.simple_prestes
@@ -222,7 +233,7 @@ class NodeEditor(QWidget):
             self.save_log.hide()
             self.reset_log.hide()
         self.viewer_button.setProperty("State", "Close")
-        self.viewer_button.setEnabled(not self.simple_mode)
+        changeEnabled(self.viewer_button, not self.simple_mode)
         self.presets_box.clear()
         self.presets_box.addItems(self.loaded_presets.keys())
         self.scriptWindow()
@@ -235,9 +246,11 @@ class NodeEditor(QWidget):
             style = Stylesheet.DARK
         self.parent_tool.pp.setStyleSheet(self.stylesheets[style.name])
         self.settings_menu.setStyleSheet(self.stylesheets[style.name])
+        self.help_menu.changeStyle(style)
         self.scene.changeStyle(style)
         for switch in self.switches:
-            switch.changeStyle(style)
+            if hasattr(switch.editor, "theme_toggle"):
+                switch.changeStyle(style)
 
     def scriptWindow(self):
         if self.viewer_button.property("State") == "None":
@@ -279,7 +292,7 @@ class NodeEditor(QWidget):
         clean = re.compile('<.*?>')
         return re.sub(clean, '', html)
     
-    def generateQueueSummary(self):
+    def generateQueueSummary(self) -> str:
         summary = f"<u><b>Command delay:</u></b> {self.settings_menu.command_delay}<br>"
         summary += f"<u><b>Commands Queue:</u></b><br>"
         i = 1
@@ -298,7 +311,7 @@ class NodeEditor(QWidget):
                 i += 1
         return summary
 
-    def generateSummary(self):
+    def generateSummary(self) -> str:
         nlines = 0
         for line in self.movie_script.toPlainText().splitlines():
             if line.strip():
@@ -346,9 +359,13 @@ class NodeEditor(QWidget):
                 current_node = None
         node_frequency = dict(sorted(node_frequency.items()))
 
-        length = self.convertTime(int(frames) / int(self.nodeEnd.content.Framerate.Text.text()))
+        length = convertTime(int(frames) / int(self.nodeEnd.content.Framerate.Text.text()))
                 
         summary = f""    
+        summary += f"<u><b>Model Refresh Rate (sec):</u></b> {self.settings_menu.model_refresh}<br>"
+        summary += f"<u><b>Viewer Refresh Rate (sec):</u></b> {self.settings_menu.viewer_refresh}<br>"
+        summary += f"<u><b>Command delay:</u></b> {self.settings_menu.command_delay}<br>"
+        summary += f"<br>"
         summary += f"<u><b>Total lines in script:</u></b> {nlines}<br>"
         summary += f"<br>"
         summary += f"<u><b>Nodes count:</u></b> {len(self.scene.nodes)}<br>"
@@ -458,21 +475,6 @@ class NodeEditor(QWidget):
         self.log = f"<u><b>Commands Log:</u></b><br>"
         self.log_count:int = 1
         self.script_window.setHtml(self.log)
-        
-    def convertTime(self, value:int|float) -> str:
-        if value < 60:
-            return(f"{format(round(value, 2), '.2f')} Seconds")
-        else:
-            value = value / 60
-            if value < 60:
-                return(f"{format(round(value, 2), '.2f')} Minutes")
-            else:
-                value = value / 60
-                if value < 24:
-                    return(f"{format(round(value, 2), '.2f')} Hours")
-                else:
-                    value = value / 24
-                    return(f"{format(round(value, 2), '.2f')} Days")
                 
     @pyqtSlot(list)
     def updateViewerText(self, text_list:list[str]=[]):
@@ -627,6 +629,7 @@ class NodeEditor(QWidget):
         self.copy_selected_label3D_objects = None
 
         self.pickers:list[QTreeViewSelector] = []
+        self.switches:list[QSwitchControl] = []
 
         self.scene.grScene.clear()
         
@@ -662,7 +665,7 @@ class ScriptViewerUpdater(QObject):
             if self.current_script != command_string:
                 self.current_script = command_string
                 self.send_command.emit(self.current_script)
-            time.sleep(1)
+            time.sleep(self.editor.settings_menu.viewer_refresh)
         return
 
 class ModelJob(tasks.Job):
@@ -706,7 +709,7 @@ class ModelUpdater(QObject):
             if models or view:
                 models_list = [self.objs_models, self.views]
                 self.send_command.emit(models_list)
-            time.sleep(1)
+            time.sleep(self.editor.settings_menu.model_refresh)
         return
 
 class CommandJob(tasks.Job):

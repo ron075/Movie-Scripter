@@ -140,28 +140,28 @@ class QDMGraphicsEdge(QGraphicsPathItem):
     def initUI(self):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
 
-    def boundingRect(self):  
+    def boundingRect(self) -> QRectF:  
         return QRectF(self.posSource[0], self.posSource[1], self.posDestination[0] - self.posSource[0], self.posDestination[1] - self.posSource[1]).normalized()
 
-    def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+    def paint(self, painter:QPainter, QStyleOptionGraphicsItem:QStyleOptionGraphicsItem, widget=None):
         if not self.edge.is_deleting:
             if self.edge.start_socket is not None and self.edge.end_socket is not None:
                 if NodeType(self.edge.start_socket.node.nodeType) == NodeType.Picker:
                     pen = self._pen_picker
                     if self.edge.start_socket.node.grNode.isSelected() or self.edge.end_socket.node.grNode.isSelected() or self.isSelected():
-                        self.setZValue(90)
+                        self.setZValue(60)
                     else:
                         self.setZValue(0)
                 elif self.isSelected():
                     pen = self._pen_selected
-                    self.setZValue(90)
+                    self.setZValue(60)
                 else:
                     if self.edge.start_socket.node.grNode.isSelected():
                         pen = self._pen_output
-                        self.setZValue(90)
+                        self.setZValue(60)
                     elif self.edge.end_socket.node.grNode.isSelected():
                         pen = self._pen_input
-                        self.setZValue(90)
+                        self.setZValue(60)
                     else:
                         pen = self._pen_default
                         self.setZValue(0)
@@ -174,7 +174,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
             self.setPath(self.update_path())
             painter.drawPath(self.path())
                 
-    def update_path(self):
+    def update_path(self) -> QPainterPath:
         s = self.posSource
         d = self.posDestination
         distX = 100

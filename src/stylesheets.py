@@ -6,7 +6,7 @@ class Stylesheet(Enum):
     DARK = 1
 
 class Stylesheets():
-    def styles(self, base_path:str) -> dict:
+    def styles(self, base_path:str) -> dict[str,str]:
         self._transparent = ["transparent", "transparent"]
         self._color = ["#000000", "#FFFFFF"]
         self._color_disabled = ["#B0B0B0", "#5F5F5F"]
@@ -76,7 +76,7 @@ class Stylesheets():
         base_path = "/".join(base_path.split("\\")) + "/resources"
         return { "LIGHT":self.create_style(base_path, 0), "DARK":self.create_style(base_path, 1)}
 
-    def create_style(self, base_path:str, index:int):
+    def create_style(self, base_path:str, index:int) -> str:
         style = f"""#frame{{ 
                 background : {self._frame_color[index]}; 
                 color : {self._color[index]}; 
@@ -345,6 +345,12 @@ class Stylesheets():
             QTreeView:disabled, QListView:disabled, QTextEdit:disabled, QLineEdit:disabled {{
                 color : {self._color_disabled[index]};
             }}
+            #info_text {{
+                background-color : {self._tab_color[index]}; 
+                color : {self._color[index]};
+                selection-background-color : {self._selection_background[index]};
+                border : none; 
+            }}
             QTreeView::branch:!has-children:has-siblings:adjoins-item {{
                 border-image : url({base_path}/{self._branch_more[index]}.png) 0;
                 image : url({base_path}/{self._branch_more[index]}.png) 0;
@@ -383,11 +389,11 @@ class Stylesheets():
             QSlider::handle:horizontal:disabled {{
                 background : {self._slider_handle_color_disabled[index]};
             }}
-            QSlider::handle:horizontal:pressed {{
+            QSlider::handle:horizontal:hover {{
                 background : {self._slider_handle_color_pressed[index]};
             }}
-            QSwitchControl, QSwitchControl:disabled{{
-                border-radius : 7px;
+            QSlider::handle:horizontal:pressed {{
+                background : {self._slider_handle_color_pressed[index]};
             }}
             QSwitchControl:unchecked{{
                 background : {self._switch_off[index]};
@@ -433,6 +439,15 @@ class Stylesheets():
                 background : transparent;
                 color : transparent;
                 image : url({base_path}/{self._settings[index]});
+            }}
+            #help_button{{
+                border : none;
+                background : transparent;
+                color : transparent;
+                image : url({base_path}/{self._info[index]});
+            }}
+            #color{{
+                border : 1px solid {self._color[index]};
             }}
             QToolTip {{
                 border : 2px solid {self._menu_border[index]};;

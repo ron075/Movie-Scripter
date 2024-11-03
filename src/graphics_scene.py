@@ -80,7 +80,9 @@ class Scene():
         self.grScene._color_dark = QColor(self.parent.styles._color_dark[style.value])
         self.grScene.setBackgroundBrush(self.grScene._color_background)
         self.grScene._pen_light = QPen(self.grScene._color_light)
+        self.grScene._pen_light.setWidth(1)
         self.grScene._pen_dark = QPen(self.grScene._color_dark)
+        self.grScene._pen_dark.setWidth(3)
         for node in self.nodes:
             node.changeStyle(style)
         for edge in self.edges:
@@ -90,6 +92,12 @@ class Scene():
         if NodeType(node.nodeType) != NodeType.Picker:
             self.nodes.append(node)
             self.nodes_id.append(node.nodeID)
+        for obj in node.content.children():
+            if type(obj) is QSwitchControl:
+                self.parent.switches.append(obj)
+        for obj in node.summary.children():
+            if type(obj) is QSwitchControl:
+                self.parent.switches.append(obj)
 
     def addEdge(self, edge:Edge):
         if not edge.temp:
@@ -97,6 +105,12 @@ class Scene():
                 self.edges.append(edge)
 
     def removeNode(self, node:Node):
+        for obj in node.content.children():
+            if type(obj) is QSwitchControl:
+                self.parent.switches.remove(obj)
+        for obj in node.summary.children():
+            if type(obj) is QSwitchControl:
+                self.parent.switches.remove(obj)
         self.nodes.remove(node)
         self.nodes_id.remove(node.nodeID)
 
@@ -112,11 +126,7 @@ class QDMGraphicsScene(QGraphicsScene):
         self.pa = parent
         self.scene = scene
 
-        self.open_context = False
-
         # settings
-        self.gridSize = 20
-        self.gridSquares = 5
 
         self._color_background = QColor("#393939")
         self._color_light = QColor("#2f2f2f")
@@ -125,14 +135,14 @@ class QDMGraphicsScene(QGraphicsScene):
         self._pen_light = QPen(self._color_light)
         self._pen_light.setWidth(1)
         self._pen_dark = QPen(self._color_dark)
-        self._pen_dark.setWidth(2)
+        self._pen_dark.setWidth(3)
 
         self.setBackgroundBrush(self._color_background)
 
     def setGrScene(self, width:int, height:int):
         self.setSceneRect(-width // 2, -height // 2, width, height)
 
-    def drawBackground(self, painter, rect):
+    def drawBackground(self, painter:QPainter, rect:QRectF):
         super().drawBackground(painter, rect)
 
         # here we create our grid
@@ -141,17 +151,17 @@ class QDMGraphicsScene(QGraphicsScene):
         top = int(math.floor(rect.top()))
         bottom = int(math.ceil(rect.bottom()))
 
-        first_left = left - (left % self.gridSize)
-        first_top = top - (top % self.gridSize)
+        first_left = left - (left % self.scene.parent.settings_menu.grid_size)
+        first_top = top - (top % self.scene.parent.settings_menu.grid_size)
 
         # compute all lines to be drawn
         lines_light, lines_dark = [], []
-        for x in range(first_left, right, self.gridSize):
-            if (x % (self.gridSize*self.gridSquares) != 0): lines_light.append(QLine(x, top, x, bottom))
+        for x in range(first_left, right, self.scene.parent.settings_menu.grid_size):
+            if (x % (self.scene.parent.settings_menu.grid_size*self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(x, top, x, bottom))
             else: lines_dark.append(QLine(x, top, x, bottom))
 
-        for y in range(first_top, bottom, self.gridSize):
-            if (y % (self.gridSize*self.gridSquares) != 0): lines_light.append(QLine(left, y, right, y))
+        for y in range(first_top, bottom, self.scene.parent.settings_menu.grid_size):
+            if (y % (self.scene.parent.settings_menu.grid_size*self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(left, y, right, y))
             else: lines_dark.append(QLine(left, y, right, y))
 
         # draw the lines
@@ -163,21 +173,35 @@ class QDMGraphicsScene(QGraphicsScene):
             painter.setPen(self._pen_dark)
             painter.drawLines(*lines_dark)
         
-    def contextMenuEvent(self, event):
-        self.open_context = True
+    def contextMenuEvent(self, event:QGraphicsSceneContextMenuEvent):
+        item = self.scene.parent.view.itemAt(self.scene.parent.view.mapFromScene(event.scenePos()))
+        self.scene.parent.view.last_lmb_click_scene_pos = self.scene.parent.view.mapFromScene(event.scenePos())
+        if item is not None:
+            if type(item) is QGraphicsTextItem or type(item) is QGraphicsProxyWidget:
+                if type(item.parentItem()) is QDMGraphicsNode:
+                    return
+                elif type(item.parentItem()) is QDMGraphicsSocket:  
+                    return
+            elif type(item) is QDMGraphicsNode:
+                return
+            elif type(item) is QDMGraphicsSocket:  
+                return
+            elif type(item) is QDMGraphicsEdge:
+                return
+            
         # Creating a menu object with the central widget as parent
         menu = QMenu(self.pa)
-        actionTitle = menu.addAction("Add a node")
-        actionTitle.setEnabled(False)
+        actionTitle = menu.addAction("Add a node")     
+        changeEnabled(actionTitle, False) 
         if self.scene.parent.simple_mode:
             action1 = menu.addAction("Color Palette")
             action2 = menu.addAction("Transparency")
-            action3 = menu.addAction("Rotation")
+            action3 = menu.addAction("Turn")
             action4 = menu.addAction("Wait")
             action5 = menu.addAction("Delete")
             action6 = menu.addAction("Split")
 
-            menu.setFixedWidth(menu.width() + 5)
+            menu.setFixedWidth(menu.width() + 15)
 
             selected_action = menu.exec(event.screenPos())
             pos = event.scenePos()
@@ -186,7 +210,7 @@ class QDMGraphicsScene(QGraphicsScene):
             elif selected_action == action2:
                 self.AddNodeTransparency(pos.x(), pos.y())
             elif selected_action == action3:
-                self.AddNodeRotation(pos.x(), pos.y())
+                self.AddNodeTurn(pos.x(), pos.y())
             elif selected_action == action4:
                 self.AddNodeWait(pos.x(), pos.y())
             elif selected_action == action5:
@@ -205,16 +229,24 @@ class QDMGraphicsScene(QGraphicsScene):
             actionG1 = menu_general.addAction("Color Palette")
             actionG2 = menu_general.addAction("Lighting")
             actionG3 = menu_general.addAction("Transparency")
-            actionG4 = menu_general.addAction("2D Label")
-            actionG5 = menu_general.addAction("3D Label")
-            actionG6 = menu_general.addAction("Movement")
-            actionG7 = menu_general.addAction("Rotation")
-            actionG8 = menu_general.addAction("Center of Rotation")
-            actionG9 = menu_general.addAction("Center of Mass")
-            actionG10 = menu_general.addAction("Wait")
-            actionG11 = menu_general.addAction("Crossfade")
-            actionG12 = menu_general.addAction("Load View")
-            actionG13 = menu_general.addAction("Fly")
+            menu_Labels = QMenu(menu_general)
+            menu_Labels.setTitle("Labels")
+            menu_general.addMenu(menu_Labels)
+            actionG4L1 = menu_Labels.addAction("2D Label")
+            actionG4L2 = menu_Labels.addAction("3D Label")
+            actionG5 = menu_general.addAction("Movement")
+            menu_Rotation = QMenu(menu_general)
+            menu_Rotation.setTitle("Rotation")
+            menu_general.addMenu(menu_Rotation)
+            actionG6R1 = menu_Rotation.addAction("Turn")
+            actionG6R2 = menu_Rotation.addAction("Rock")
+            actionG6R3 = menu_Rotation.addAction("Wobble")
+            actionG7 = menu_general.addAction("Center of Rotation")
+            actionG8 = menu_general.addAction("Center of Mass")
+            actionG9 = menu_general.addAction("Wait")
+            actionG10 = menu_general.addAction("Crossfade")
+            actionG11 = menu_general.addAction("Load View")
+            actionG12 = menu_general.addAction("Fly")
             actionS1 = menu_Special.addAction("Delete")
             actionS2 = menu_Special.addAction("Split")
             actionS3 = menu_Special.addAction("Save View")
@@ -231,25 +263,29 @@ class QDMGraphicsScene(QGraphicsScene):
                 self.AddNodeLighting(pos.x(), pos.y())
             elif selected_action == actionG3:
                 self.AddNodeTransparency(pos.x(), pos.y())
-            elif selected_action == actionG4:
+            elif selected_action == actionG4L1:
                 self.AddNode2DLabel(pos.x(), pos.y())
-            elif selected_action == actionG5:
+            elif selected_action == actionG4L2:
                 self.AddNode3DLabel(pos.x(), pos.y())
-            elif selected_action == actionG6:
+            elif selected_action == actionG5:
                 self.AddNodeMovement(pos.x(), pos.y())
+            elif selected_action == actionG6R1:
+                self.AddNodeTurn(pos.x(), pos.y())
+            elif selected_action == actionG6R2:
+                self.AddNodeRock(pos.x(), pos.y())
+            elif selected_action == actionG6R3:
+                self.AddNodeWobble(pos.x(), pos.y())
             elif selected_action == actionG7:
-                self.AddNodeRotation(pos.x(), pos.y())
-            elif selected_action == actionG8:
                 self.AddNodeCenterRotation(pos.x(), pos.y())
-            elif selected_action == actionG9:
+            elif selected_action == actionG8:
                 self.AddNodeCenterMass(pos.x(), pos.y())
-            elif selected_action == actionG10:
+            elif selected_action == actionG9:
                 self.AddNodeWait(pos.x(), pos.y())
-            elif selected_action == actionG11:
+            elif selected_action == actionG10:
                 self.AddNodeCrossfade(pos.x(), pos.y())
-            elif selected_action == actionG12:
+            elif selected_action == actionG11:
                 self.AddNodeLoadView(pos.x(), pos.y())
-            elif selected_action == actionG13:
+            elif selected_action == actionG12:
                 self.AddNodeFly(pos.x(), pos.y())
             elif selected_action == actionS1:
                 self.AddNodeDelete(pos.x(), pos.y())
@@ -271,8 +307,12 @@ class QDMGraphicsScene(QGraphicsScene):
         node = Node(self.session, self.scene, NodeType.Label3D, model_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeMovement(self, x:float, y:float):
         node = Node(self.session, self.scene, NodeType.Movement, model_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
-    def AddNodeRotation(self, x:float, y:float):
-        node = Node(self.session, self.scene, NodeType.Rotation, model_input=True, center_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
+    def AddNodeTurn(self, x:float, y:float):
+        node = Node(self.session, self.scene, NodeType.Turn, model_input=True, center_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
+    def AddNodeRock(self, x:float, y:float):
+        node = Node(self.session, self.scene, NodeType.Rock, model_input=True, center_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
+    def AddNodeWobble(self, x:float, y:float):
+        node = Node(self.session, self.scene, NodeType.Wobble, model_input=True, center_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeCenterRotation(self, x:float, y:float):
         node = Node(self.session, self.scene, NodeType.CenterRotation, center_input=True, parent=self.scene.parent, pos_x=x, pos_y=y)
     def AddNodeCenterMass(self, x:float, y:float):
@@ -339,14 +379,14 @@ class QDMGraphicsView(QGraphicsView):
          
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
-    def eventFilter(self, object, event):
+    def eventFilter(self, object:QObject, event:QEvent) -> bool:
         if object == self.verticalScrollBar() and event.type() == QEvent.Type.Wheel:
             return True
         elif object == self.horizontalScrollBar() and event.type() == QEvent.Type.Wheel:
             return True
         return False
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event:QWheelEvent):
         item = self.itemAt(event.position().toPoint())
         if item is None:
             zoomOutFactor = 1 / self.zoomInFactor[self.platform_index]
@@ -370,7 +410,7 @@ class QDMGraphicsView(QGraphicsView):
         else:    
             super().wheelEvent(event)
                 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event:QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
                 self.leftMouseButtonControlModifierPress(event)
@@ -379,18 +419,13 @@ class QDMGraphicsView(QGraphicsView):
         else:
             super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event:QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
                 pass
             else:
-                self.leftMouseButtonNoModifierRelease(event)           
-        elif not self.grScene.open_context:
-            super().mouseReleaseEvent(event)
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-        else:
-            self.grScene.open_context = False
-    
+                self.leftMouseButtonNoModifierRelease(event)      
+
     def leftMouseButtonControlModifierPress(self, event:QMouseEvent):
         item = self.itemAt(event.pos())
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
@@ -505,7 +540,7 @@ class QDMGraphicsView(QGraphicsView):
         edge.end_socket.edge = None
         del edge
 
-    def leftMouseButtonNoModifierPress(self, event):
+    def leftMouseButtonNoModifierPress(self, event:QMouseEvent):
         item = self.itemAt(event.pos())
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
         if item is None:
@@ -528,10 +563,9 @@ class QDMGraphicsView(QGraphicsView):
                     item.parentItem().setSelected(True)
         super().mousePressEvent(event)
 
-    def leftMouseButtonNoModifierRelease(self, event):
+    def leftMouseButtonNoModifierRelease(self, event:QMouseEvent):
         item = self.itemAt(event.pos())
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
-
         if self.draw_temp_edge in (TempEdgeType.SOURCE, TempEdgeType.DESTINATION):
             self.grScene.removeItem(self.temp_edge.grEdge)
             self.draw_temp_edge = TempEdgeType.NONE
@@ -540,21 +574,28 @@ class QDMGraphicsView(QGraphicsView):
             self.update()
 
         self.setDragMode(QGraphicsView.DragMode.NoDrag) 
-        if type(item) is QDMGraphicsSocket:
-            if item.socket.edge is None:
-                if SocketType(item.socket.socket_type) == SocketType.OUTPUT_SOCKET and self.end_socket is not None:
-                    self.start_socket = item
-                    if self.end_socket.socket.node != self.start_socket.socket.node:
-                        if not self.checkLoop(self.start_socket.socket, self.end_socket.socket):
-                            Edge(self.viewParent.scene, self.start_socket.socket, self.end_socket.socket)
-                            self.start_socket.socket.node.summary.updateOutputValues()
-                elif SocketType(item.socket.socket_type) == SocketType.INPUT_SOCKET and self.start_socket is not None:
-                    self.end_socket = item
-                    if self.end_socket.socket.node != self.start_socket.socket.node:
-                        if not self.checkLoop(self.start_socket.socket, self.end_socket.socket):
-                            Edge(self.viewParent.scene, self.start_socket.socket, self.end_socket.socket)  
-                            self.start_socket.socket.node.summary.updateOutputValues()     
 
+        if item is not None:
+            if type(item) is QGraphicsTextItem or type(item) is QGraphicsProxyWidget:
+                if type(item.parentItem()) is QDMGraphicsNode:
+                    item.parentItem().node.setPos(item.parentItem().node.pos.x(), item.parentItem().node.pos.y())  
+            elif type(item) is QDMGraphicsNode:                    
+                item.node.setPos(item.node.pos.x(), item.node.pos.y())  
+            elif type(item) is QDMGraphicsSocket:
+                if item.socket.edge is None:
+                    if SocketType(item.socket.socket_type) == SocketType.OUTPUT_SOCKET and self.end_socket is not None:
+                        self.start_socket = item
+                        if self.end_socket.socket.node != self.start_socket.socket.node:
+                            if not self.checkLoop(self.start_socket.socket, self.end_socket.socket):
+                                Edge(self.viewParent.scene, self.start_socket.socket, self.end_socket.socket)
+                                self.start_socket.socket.node.summary.updateOutputValues()
+                    elif SocketType(item.socket.socket_type) == SocketType.INPUT_SOCKET and self.start_socket is not None:
+                        self.end_socket = item
+                        if self.end_socket.socket.node != self.start_socket.socket.node:
+                            if not self.checkLoop(self.start_socket.socket, self.end_socket.socket):
+                                Edge(self.viewParent.scene, self.start_socket.socket, self.end_socket.socket)  
+                                self.start_socket.socket.node.summary.updateOutputValues()     
+                            
         super().mouseReleaseEvent(event)
 
     def checkLoop(self, start_socket:Socket, current_socket:Socket) -> bool:
@@ -568,7 +609,7 @@ class QDMGraphicsView(QGraphicsView):
                     return False
         return False
     
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event:QMouseEvent):
         if self.draw_temp_edge in (TempEdgeType.SOURCE, TempEdgeType.DESTINATION) and self.temp_edge is not None:
             mousePos = self.mapToScene(event.pos())
             self.temp_edge.updateTempPositions(mousePos)

@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from sys import platform
+from .util import *
 from .sockets import *
 from .edges import *
 from .node_base import *
@@ -11,6 +12,7 @@ from .simple_nodes import *
 from .advanced_nodes import *
 from .enum_classes import *
 from .info import *
+import webbrowser
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     from .main_window import NodeEditor
 
 class Node():
-    def __init__(self, session, scene:Scene, nodeType:NodeType, has_input:bool=True, has_output:bool=True, node_id:str="", nodePickerType:NodePickerType=NodePickerType.NoPicker, removable:bool=True, model_input:bool=False, color_input:bool=False, center_input:bool=False, view_input:bool=False, fly_input:bool=False, delete_input:bool=False, split_input:bool=False, pos_x:int=0, pos_y:int=0, index:int=0, colormap_height:int=50, parent:NodeEditor=None):
+    def __init__(self, session, scene:Scene, nodeType:NodeType, has_input:bool=True, has_output:bool=True, node_id:str="", nodePickerType:NodePickerType=NodePickerType.NoPicker, removable:bool=True, model_input:bool=False, color_input:bool=False, center_input:bool=False, view_input:bool=False, fly_input:bool=False, delete_input:bool=False, pos_x:int=0, pos_y:int=0, index:int=0, colormap_height:int=50, parent:NodeEditor=None):
         self.session = session
 
         self.parent = parent
@@ -50,8 +52,6 @@ class Node():
         self.input_fly_edge:Edge|None = None
         self.input_delete:Node|None = None
         self.input_delete_edge:Edge|None = None
-        self.input_split:Node|None = None
-        self.input_split_edge:Edge|None = None
         
         if self.scene.parent.simple_mode:
             self.summary = SimpleNodeSummary(self.session, self, model_input, color_input, center_input, view_input, fly_input)
@@ -63,8 +63,8 @@ class Node():
                 self.content = SimpleNodeColorPalette(self.session, self.summary, "Color Palette", self.colormap_height)
             elif NodeType(self.nodeType) == NodeType.Transparency:
                 self.content = SimpleNodeTransparency(self.session, self.summary, "Transparency")
-            elif NodeType(self.nodeType) == NodeType.Rotation:
-                self.content = SimpleNodeRotation(self.session, self.summary, "Rotation")
+            elif NodeType(self.nodeType) == NodeType.Turn:
+                self.content = SimpleNodeTurn(self.session, self.summary, "Turn")
             elif NodeType(self.nodeType) == NodeType.Wait:
                 self.content = SimpleNodeWait(self.session, self.summary, "Wait")
             elif NodeType(self.nodeType) == NodeType.Delete:
@@ -92,8 +92,12 @@ class Node():
                 self.content = AdvancedNode3DLabel(self.session, self.summary, "3D Label")
             elif NodeType(self.nodeType) == NodeType.Movement:
                 self.content = AdvancedNodeMovement(self.session, self.summary, "Movement")
-            elif NodeType(self.nodeType) == NodeType.Rotation:
-                self.content = AdvancedNodeRotation(self.session, self.summary, "Rotation")
+            elif NodeType(self.nodeType) == NodeType.Turn:
+                self.content = AdvancedNodeTurn(self.session, self.summary, "Turn")
+            elif NodeType(self.nodeType) == NodeType.Rock:
+                self.content = AdvancedNodeRock(self.session, self.summary, "Rock")
+            elif NodeType(self.nodeType) == NodeType.Wobble:
+                self.content = AdvancedNodeWobble(self.session, self.summary, "Wobble")
             elif NodeType(self.nodeType) == NodeType.CenterRotation:
                 self.content = AdvancedNodeCenterRotation(self.session, self.summary, "Center of Rotation")
             elif NodeType(self.nodeType) == NodeType.CenterMass:
@@ -115,6 +119,9 @@ class Node():
             elif NodeType(self.nodeType) == NodeType.End:
                 self.content = AdvancedNodeEnd(self.session, self.summary, "Finish")
         
+        changeCursor(self.content.children())
+        changeCursor(self.summary.children())
+                    
         self.title:str = self.content.title
 
         self.inputs_counter = 0
@@ -136,8 +143,12 @@ class Node():
         self.grNode = QDMGraphicsNode(self, self.inputs_counter)
         self.setPos(pos_x, pos_y)
 
-        self.help_strings = Info().set_info(self)
-        self.set_info(self.scene.parent.settings_menu.current_info_type)
+        self.help_string, self.help_link = Info().set_info(self)
+
+        if self.help_link != "": 
+            self.grNode.info.clicked.connect(self.openInfoLink)
+        self.set_info_link(self.scene.parent.settings_menu.allow_info_link)
+        self.grNode.info.setToolTip(self.help_string)
 
         self.scene.addNode(self)
         self.scene.grScene.addItem(self.grNode)
@@ -255,8 +266,18 @@ class Node():
                 else:
                     self.changeStyle(Stylesheet.DARK)
                     
-    def set_info(self, info_strings_format:int):
-        self.grNode.info.setToolTip(self.help_strings[info_strings_format])
+    def set_info_link(self, allow_link:bool):
+        if allow_link:
+            if self.help_link != "": 
+                self.grNode.info.setCursor(Qt.CursorShape.PointingHandCursor)
+            else: 
+                self.grNode.info.setCursor(Qt.CursorShape.ArrowCursor)
+        else: 
+            self.grNode.info.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def openInfoLink(self):
+        if self.scene.parent.settings_menu.allow_info_link:
+            webbrowser.open(self.help_link)
 
     def changeStyle(self, style:Stylesheet):
         self.grNode.info.setStyleSheet(self.scene.parent.stylesheets[style.name])
@@ -268,8 +289,6 @@ class Node():
         self.grNode._brush_title_color = QColor(self.scene.parent.styles._node_brush_title[style.value])
         self.grNode._brush_background_color = QColor(self.scene.parent.styles._node_brush_background[style.value])
         self.grNode.updateBrushesAlpha()
-        self.grNode._brush_title.setColor(self.grNode._brush_title_color)
-        self.grNode._brush_background.setColor(self.grNode._brush_background_color)   
         self.grNode._pen_default.setColor(QColor(self.scene.parent.styles._node_pen_default[style.value])) 
         if self.node_input is not None:
             self.node_input.changeStyle(style)       
@@ -288,10 +307,13 @@ class Node():
         self.grNode.setPos(x, y)
 
     @property
-    def pos(self):
+    def pos(self) -> QPointF:
         return self.grNode.pos()
     def setPos(self, x:float, y:float):
-        self.grNode.setPos(x, y)
+        if self.scene.parent.settings_menu.grid_snap:
+            self.grNode.setPos(self.scene.parent.settings_menu.grid_size * round(x / self.scene.parent.settings_menu.grid_size), self.scene.parent.settings_menu.grid_size * round(y / self.scene.parent.settings_menu.grid_size))
+        else:
+            self.grNode.setPos(x, y)
     
     def getSocketPosition(self, index:int, position:Position) -> list[int]:
         width = self.grNode.node_width if self.grNode.node_width > 0 else self.grNode.width
@@ -337,6 +359,7 @@ class QDMGraphicsNode(QGraphicsItem):
         self.node_height = 0
         self.edge_size = 10
         self.title_height = 24
+        self.title_width = 0
         self._padding = 4
 
         self._current_pen = QPen(QColor("#7F000000"))
@@ -361,13 +384,12 @@ class QDMGraphicsNode(QGraphicsItem):
                 self._pen_picker = QPen(QColor("#FFFFBB44"))
             elif NodePickerType(self.node.nodePickerType) == NodePickerType.DeletePicker:
                 self._pen_picker = QPen(QColor("#FFCCCCCC"))
-            #elif NodePickerType(self.node.nodePickerType) == NodePickerType.SplitPicker:
-                #self._pen_picker = QPen(QColor("#FF6655FF"))
             self._pen_selected = self._pen_picker
             self._pen_picker.setWidth(2)        
             self._pen_picker.setStyle(Qt.PenStyle.DashLine)
         else:
             self._pen_selected = QPen(QColor("#FF5656FF"))
+            self._pen_selected.setWidth(2)      
 
         self._brush_title_color = QColor("#FF313131")
         self._brush_background_color = QColor("#E3212121")
@@ -378,15 +400,18 @@ class QDMGraphicsNode(QGraphicsItem):
         self.title = self.node.title
 
         self.initUI()
+
     @property
-    def title(self): 
+    def title(self) -> str: 
         return self._title
+    
     @title.setter
     def title(self, value:str):
         self._title = value
         self.title_item.setPlainText(self._title)
+        self.title_width = int(self.title_item.boundingRect().width())
 
-    def boundingRect(self):
+    def boundingRect(self) -> QRectF:
         if self.isSelected():
             return QRectF(0, 0, self.checkWidth(), self.checkHeight()).normalized()        
         else:
@@ -403,7 +428,6 @@ class QDMGraphicsNode(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
 
-
     def initTitle(self):
         self.title_item = QGraphicsTextItem(self)
         self.title_item.setDefaultTextColor(self._title_color)
@@ -419,14 +443,12 @@ class QDMGraphicsNode(QGraphicsItem):
                     self.first_load_content = False
                 else:
                     self.content.show()
-
-                if not self.first_load_summary:
-                    self.summary.hide()
+                self.summary.hide()
                     
-                summary_size = self.summary.main_layout.contentsRect()
                 content_size = self.content.main_layout.contentsRect()
-                self.node_height = (summary_size.height() if summary_size.height() > content_size.height() else content_size.height()) + (2 * self.edge_size) + self.title_height
-                self.node_width = (summary_size.width() if summary_size.width() > content_size.width() else content_size.width()) + (4 * self.edge_size)
+                
+                self.node_height = content_size.height()+ (2 * self.edge_size)
+                self.node_width = max(content_size.width(), self.title_width) + (4 * self.edge_size)
 
                 self.info.move(self.node_width - self.title_height - 2, -2)
 
@@ -451,9 +473,6 @@ class QDMGraphicsNode(QGraphicsItem):
                     self.setZValue(100)
                     self.selected = True
             else:
-                if not self.first_load_content:
-                    self.content.hide() 
-
                 if self.first_load_summary:
                     self.initSummary()
                     self.initInfo()
@@ -461,6 +480,9 @@ class QDMGraphicsNode(QGraphicsItem):
                 else:
                     self.summary.show()
                     self.info.move(self.node_width - self.title_height - 2, -2)
+
+                if not self.first_load_content:
+                    self.content.hide()
 
                 default = True
                 if self.node.node_input is not None:
@@ -510,13 +532,14 @@ class QDMGraphicsNode(QGraphicsItem):
                             break
                 if self.selected:
                     summary_size = self.summary.main_layout.contentsRect()
-                    content_size = self.content.main_layout.contentsRect()
-                    self.node_height = self.summary.main_layout.contentsRect().height() + (2 * self.edge_size) + self.node.socket_spacing * (self.node.inputs_counter - 1)
-                    self.node_width = self.summary.main_layout.contentsRect().width() + (4 * self.edge_size)
+
+                    self.node_height = summary_size.height() + (2 * self.edge_size) + self.node.socket_spacing * (self.node.inputs_counter - 1)
+                    self.node_width = max(summary_size.width(), self.title_width) + (4 * self.edge_size)
+
                     self.selected = False
                 if default:
                     self._current_pen = self._pen_default
-                    self.setZValue(5)
+                    self.setZValue(10)
                     
             # title
             path_title = QPainterPath()
@@ -558,7 +581,7 @@ class QDMGraphicsNode(QGraphicsItem):
         self.content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.content.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.grContent.setWidget(self.content)
-        self.content.setGeometry(self.edge_size, self.title_height + self.edge_size, self.width, 0)
+        self.content.setGeometry(self.edge_size, self.title_height - self._padding, self.width, 0)
 
     def initSummary(self):
         self.grSummary = QGraphicsProxyWidget(self)
@@ -567,13 +590,13 @@ class QDMGraphicsNode(QGraphicsItem):
         self.grSummary.setWidget(self.summary)
         self.summary.setGeometry(self.edge_size, self.title_height - self._padding, self.width, 0) 
     
-    def checkHeight(self, spacing:float = 0):
+    def checkHeight(self, spacing:float = 0) -> (float|int):
         if self.node_height > 0 and self.node_height + spacing > self.height:
             return self.node_height + self.title_height + spacing
         else:
             return self.height + self.title_height
         
-    def checkWidth(self, spacing:float = 0):
+    def checkWidth(self, spacing:float = 0) -> (float|int):
         if self.node_width > 0 and self.node_width + spacing > self.width:
             return self.node_width + spacing
         else:

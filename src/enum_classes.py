@@ -1,27 +1,36 @@
 from enum import Enum 
 
 class NodeType(Enum):
-    Start = -1
-    End = -2
+    Start = 1
+    End = 2
+    Picker = 3
+    Summary = 4
 
-    ColorPalette = 1
-    Lighting = 2
-    Transparency = 3
-    Label2D = 4
-    Label3D = 5
-    Movement = 6
-    Rotation = 7
-    Wait = 8
-    Crossfade = 9
-    Picker = 10
-    CenterRotation = 11
-    CenterMass = 12
-    View_Save = 13
-    View_Load = 14
-    Fly = 15
-    Delete = 16
-    Summary = 17
-    Split = 18
+    ColorPalette = 11
+    Lighting = 12
+    Transparency = 13
+    Movement = 14
+
+    Label2D = 21
+    Label3D = 22
+
+    Turn = 31
+    Rock = 32
+    Wobble = 33
+
+    CenterRotation = 41
+    CenterMass = 42
+
+    View_Save = 51
+    View_Load = 52
+    Fly = 53
+
+    Wait = 61
+    Crossfade = 62
+
+    Delete = 71
+
+    Split = 81
 
 class NodePickerType(Enum):
     NoPicker = 0
@@ -31,7 +40,6 @@ class NodePickerType(Enum):
     ViewPicker = 4
     FlyPicker = 5
     DeletePicker = 6
-    SplitPicker = 7
 
 class Position(Enum):
     LEFT_TOP = 1

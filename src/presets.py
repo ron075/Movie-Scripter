@@ -22,13 +22,13 @@ class Presets():
         self.simple_prestes = {"Rotation Preset - Atoms":self.simple_rotation_preset_atoms,
                                "Rotation Preset - Cartoons":self.simple_rotation_preset_cartoons,
                                "Rotation Preset - Surfaces":self.simple_rotation_preset_surfaces}
-        self.expert_prestes = {"Rotation Preset - Atoms":self.rotation_preset_atoms,
+        self.advanced_prestes = {"Rotation Preset - Atoms":self.rotation_preset_atoms,
                                "Rotation Preset - Cartoons":self.rotation_preset_cartoons,
                                "Rotation Preset - Surfaces":self.rotation_preset_surfaces}
         
         if self.editor.settings_menu.ModelHetero:
             self.simple_prestes["Rotation Preset - Hetero"] = self.simple_rotation_preset_cartoons_hetero
-            self.expert_prestes["Rotation Preset - Hetero"] = self.rotation_preset_cartoons_hetero
+            self.advanced_prestes["Rotation Preset - Hetero"] = self.rotation_preset_cartoons_hetero
         
     def simple_rotation_preset_atoms(self):
         posX = -300
@@ -119,7 +119,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 350
             node.setPos(posX, posY)
             node.input_model.content.Molecule.ModelTree.selectionModel().select(node.input_model.content.Molecule.ModelTree.model().index(0, 0), QItemSelectionModel.SelectionFlag.Select)
@@ -248,7 +248,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 350
             node.setPos(posX, posY)
             node.input_model.content.Molecule.ModelTree.selectionModel().select(node.input_model.content.Molecule.ModelTree.model().index(0, 0), QItemSelectionModel.SelectionFlag.Select)
@@ -377,7 +377,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 350
             node.setPos(posX, posY)
             node.input_model.content.Molecule.ModelTree.selectionModel().select(node.input_model.content.Molecule.ModelTree.model().index(0, 0), QItemSelectionModel.SelectionFlag.Select)
@@ -555,7 +555,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 350
             node.setPos(posX, posY)
             node.input_model.content.Molecule.ModelTree.selectionModel().select(node.input_model.content.Molecule.ModelTree.model().index(0, 0), QItemSelectionModel.SelectionFlag.Select)
@@ -699,7 +699,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 200
             node.setPos(posX, posY)
             node.summary.ModelToggle.setChecked(False)
@@ -844,7 +844,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 200
             node.setPos(posX, posY)
             node.summary.ModelToggle.setChecked(False)
@@ -989,7 +989,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 200
             node.setPos(posX, posY)
             node.summary.ModelToggle.setChecked(False)
@@ -1192,7 +1192,7 @@ class Presets():
             Edge(self.editor.scene, previousNode.node_output, node.node_input)        
             previousNode = node
 
-            node = Node(self.session, self.editor.scene, NodeType.Rotation, model_input=True, center_input=True)
+            node = Node(self.session, self.editor.scene, NodeType.Turn, model_input=True, center_input=True)
             posY += 200
             node.setPos(posX, posY)
             node.summary.ModelToggle.setChecked(False)
