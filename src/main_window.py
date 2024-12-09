@@ -31,9 +31,6 @@ class NodeEditor(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.settings_menu = SettingsMenu(self.session, self)
-        self.help_menu = HelpMenu(self.session, self)
-
         self.command_queue = queue.Queue()
 
         self.log = f"<u><b>Commands Log:</u></b><br>"
@@ -65,19 +62,13 @@ class NodeEditor(QWidget):
         self.pickers:list[QTreeViewSelector] = []
         self.switches:list[QSwitchControl] = []
 
-        # crate graphics scenec
+        # crate graphics scene
         self.scene = Scene(self.session, self)
 
         self.stylesheets = { "DARK": "", "LIGHT": "" }
         _base_path = os.path.dirname(os.path.abspath(__file__))
         self.styles = Stylesheets()
         self.stylesheets = self.styles.styles(_base_path)
-        
-        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False, parent=self)
-        self.nodeEnd = Node(self.session, self.scene, NodeType.End, removable=False, has_output=False, parent=self)
-
-        self.nodeStart.setPos(-300,-300)
-        self.nodeEnd.setPos(-150,-150)
 
         self.editor_layout = QVBoxLayout(self)
 
@@ -93,7 +84,6 @@ class NodeEditor(QWidget):
         self.script_window.setDocument(self.script)
         self.script_window.setReadOnly(True)
         self.script_window.hide()
-        self.script_window.setMinimumWidth(200)
         self.layoutS1V1H1 = QHBoxLayout()
         self.save_log = QPushButton("Save")
         self.save_log.hide()
@@ -108,6 +98,8 @@ class NodeEditor(QWidget):
         self.script_window_widget.setLayout(self.layoutS1V1)
         self.layoutS1.addWidget(self.view)
         self.layoutS1.addWidget(self.script_window_widget)
+        self.layoutS1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         self.layoutG1 = QGridLayout()
         self.presets_box = QComboBox()
@@ -144,10 +136,8 @@ class NodeEditor(QWidget):
         self.settings_button = QPushButton("")
         self.settings_button.setProperty("State", "Closed")
         self.settings_button.setObjectName("settings_button")
-        self.settings_button.clicked.connect(self.settings_menu.openSettings)
         self.help_button = QPushButton("")
         self.help_button.setObjectName("help_button")
-        self.help_button.clicked.connect(self.help_menu.openHelp)
         self.layoutG1.addWidget(self.presets_box, 0, 0, 1, 1)
         self.layoutG1.addWidget(self.load_button, 1, 0, 1, 1)
         self.layoutG1.addWidget(self.center_button, 0, 1, 1, 1)
@@ -168,7 +158,21 @@ class NodeEditor(QWidget):
         
         self.editor_layout.addWidget(self.layoutS1)
         self.editor_layout.addLayout(self.layoutG1)
+        
+        self.settings_menu = SettingsMenu(self.session, self)
+        self.settings_button.clicked.connect(self.settings_menu.openSettings)
 
+        self.help_menu = HelpMenu(self.session, self)
+        self.help_button.clicked.connect(self.help_menu.openHelp)
+        
+        self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False, parent=self)
+        self.nodeEnd = Node(self.session, self.scene, NodeType.End, removable=False, has_output=False, parent=self)
+
+        self.nodeStart.setPos(-300,-300)
+        self.nodeEnd.setPos(-150,-150)
+
+        self.view.installEventFilter(self)
+        
         self.setLayout(self.editor_layout) 
 
         self.presets = Presets(self.session, self)
@@ -180,6 +184,9 @@ class NodeEditor(QWidget):
 
         self.changeStyle()
 
+        self.viewer_button.setProperty("State", "Close")
+        self.scriptWindow()
+
         changeCursor(self.children())
 
         self.script_thread = ScriptJob(self.session, self)
@@ -188,7 +195,16 @@ class NodeEditor(QWidget):
         self.model_thread.start()
         self.command_thread = CommandJob(self.session, self)
         self.command_thread.start()
+
+        QTimer.singleShot(0, self.focusView)
         
+    def eventFilter(self, object:QObject, event:QEvent) -> bool:
+        if object == self.view and event.type() == QEvent.Type.Resize:
+            self.view.setSceneRect(self.scene.grScene.sceneRect())
+            self.settings_menu.setViewerMaximumSize(self.layoutS1.width())
+            return True
+        return False
+
     @pyqtSlot(str)
     def runCommand(self, command:str):
         commands.run(self.session, self.strip_html_tags(command))
@@ -253,39 +269,46 @@ class NodeEditor(QWidget):
                 switch.changeStyle(style)
 
     def scriptWindow(self):
-        if self.viewer_button.property("State") == "None":
+        if self.viewer_button.property("State") == "Summary" or self.viewer_button.property("State") == "Close":
+            self.viewer_button.setProperty("State", "None")
+            self.viewer_button.setText("Viewer: None")
+            self.layoutS1.setSizes([self.width(), 0])
+            for i in range(0, self.layoutS1.count()):
+                self.layoutS1.handle(i).setEnabled(False)
+            self.layoutS1.handle(0).setEnabled(False)
+            self.script_window.hide()
+        elif self.viewer_button.property("State") == "None":
             self.viewer_button.setProperty("State", "Script")
             self.viewer_button.setText("Viewer: Script")
+            for i in range(0, self.layoutS1.count()):
+                self.layoutS1.handle(i).setEnabled(True)
+            self.layoutS1.setSizes([self.width() - 200, 200])
             self.script_window.show()
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Script":
             self.viewer_button.setProperty("State", "Queue")
             self.viewer_button.setText("Viewer: Queue")
+            self.layoutS1.setSizes([self.width() - 200, 200])
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Queue":
             self.viewer_button.setProperty("State", "Log")
             self.viewer_button.setText("Viewer: Log")
+            self.layoutS1.setSizes([self.width() - 200, 200])
             self.save_log.show()
             self.reset_log.show()
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Log":
             self.viewer_button.setProperty("State", "Comments")
             self.viewer_button.setText("Viewer: Comments")
+            self.layoutS1.setSizes([self.width() - 200, 200])
             self.save_log.hide()
             self.reset_log.hide()
             self.updateViewerText()
         elif self.viewer_button.property("State") == "Comments":
             self.viewer_button.setProperty("State", "Summary")
             self.viewer_button.setText("Viewer: Summary")
+            self.layoutS1.setSizes([self.width() - 200, 200])
             self.updateViewerText()
-        elif self.viewer_button.property("State") == "Summary":
-            self.viewer_button.setProperty("State", "None")
-            self.viewer_button.setText("Viewer: None")
-            self.script_window.hide()
-        elif self.viewer_button.property("State") == "Close":
-            self.viewer_button.setProperty("State", "None")
-            self.viewer_button.setText("Viewer: None")
-            self.script_window.hide()
 
     def strip_html_tags(self, html:str) -> str:
         html = html.replace("'", "")
@@ -494,6 +517,8 @@ class NodeEditor(QWidget):
                 text = self.viewer_texts[2]
             elif self.viewer_button.property("State") == "Summary":
                 text = self.viewer_texts[3]
+            else:
+                text = None
             if text is not None:
                 value = self.script_window.verticalScrollBar().value()
                 self.script_window.setHtml(text)
@@ -630,8 +655,16 @@ class NodeEditor(QWidget):
 
         self.pickers:list[QTreeViewSelector] = []
         self.switches:list[QSwitchControl] = []
+        self.switches.append(self.theme_toggle)
+
+        self.help_button.clicked.disconnect(self.help_menu.openHelp)
 
         self.scene.grScene.clear()
+
+        self.help_menu = HelpMenu(self.session, self)
+        self.help_button.clicked.connect(self.help_menu.openHelp)
+
+        self.scene.grScene.addItem(self.help_menu.grHelp)
         
         self.nodeStart = Node(self.session, self.scene, NodeType.Start, removable=False)
         self.nodeEnd = Node(self.session, self.scene, NodeType.End, removable=False, has_output=False)

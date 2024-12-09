@@ -277,7 +277,6 @@ class AdvancedNodeColorPalette(NodeBase):
         self.layoutH4T1V1H2 = QHBoxLayout()
         self.lHalfbond = QLabel("Halfbond")
         self.Halfbond = QSwitchControl(self.summary.node.scene.parent)
-        print(11111)
         changeEnabled(self.Halfbond, False)
         self.layoutH4T1V1H2.addWidget(self.lHalfbond)
         self.layoutH4T1V1H2.addWidget(self.Halfbond)

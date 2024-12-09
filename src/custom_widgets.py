@@ -101,38 +101,46 @@ class QColorMap(CustomQWidget):
         return color.name()
 
 class QNumEdit(CustomQWidget):
-    def __init__(self, min:int=None, max:int=None, step:int=1, decimals:int=0, horizontal:bool=True, label:str="", addSlider:bool=False, parent=None):
+    def __init__(self, min:int=None, max:int=None, step:int=1, decimals:int=0, horizontal:bool=True, side_label:bool=False, label:str="", label_align:Qt.AlignmentFlag=Qt.AlignmentFlag.AlignCenter, addSlider:bool=False, parent=None):
 
         super().__init__(parent)
 
         self.min = min
         self.max = max
-        self.horizontal = horizontal
         self.decimals = decimals
         self.addSlider = addSlider
-        self.text = ""
+        self.horizontal = horizontal
+        self.side_label = side_label
         self.label = label
+        self.label_align = label_align
         self.multi = 10 ** self.decimals
+        
+        self.text = ""
+
         if step < 1:
             self.step = 1 / self.multi
         else:
             self.step = step / self.multi
 
-        self.widget_layout = QVBoxLayout()
+        if self.side_label:
+            self.widget_layout = QHBoxLayout()
+        else:
+            self.widget_layout = QVBoxLayout()
 
         self.widget_layout.setSpacing(4)
 
         self.Label = QLabel(self.label)
-        self.Label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.Label.setAlignment(self.label_align | Qt.AlignmentFlag.AlignVCenter)
         if self.addSlider:
             self.Slider = QSlider(orientation=Qt.Orientation.Horizontal if self.horizontal else Qt.Orientation.Vertical)
             if self.min is not None:
                 self.Min = QLabel(str(int(self.min) if self.decimals <= 0 else round(self.min, self.decimals)))
+                self.Min.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 self.Slider.setMinimum(int(self.min * self.multi))
             if self.max is not None:
                 self.Max = QLabel(str(int(self.max) if self.decimals <= 0 else round(self.max, self.decimals)))
+                self.Min.setAlignment(Qt.AlignmentFlag.AlignRight)
                 self.Slider.setMaximum(int(self.max * self.multi))
-
             if self.min is not None and self.max is not None:
                 self.Slider.setValue(int((self.min + self.max) / 2 * self.multi))
             elif self.min is not None:
@@ -194,23 +202,30 @@ class QNumEdit(CustomQWidget):
         self.Minus.clicked.connect(self.decreaseValueByStep)
 
         if self.addSlider:
-            self.layoutH1 = QHBoxLayout()
+            self.layoutH1 = QGridLayout()
             if self.min is not None:
-                self.layoutH1.addWidget(self.Min)
-            self.layoutH1.addWidget(self.Slider)
+                self.layoutH1.addWidget(self.Min, 0, 0, 1, 1)
+            self.layoutH1.addWidget(self.Slider, 0, 1, 1, 5)
             if self.max is not None:
-                self.layoutH1.addWidget(self.Max)
+                self.layoutH1.addWidget(self.Max, 0, 6, 1, 1)
         self.layoutH2 = QHBoxLayout()
         self.layoutH2V1 = QVBoxLayout()
-        self.layoutH2V1.addWidget(self.Plus, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layoutH2V1.addWidget(self.Minus, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layoutH2V1.addWidget(self.Plus, alignment=Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
+        self.layoutH2V1.addWidget(self.Minus, alignment=Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
         self.layoutH2.addLayout(self.layoutH2V1)
-        self.layoutH2.addWidget(self.Text, alignment=Qt.AlignmentFlag.AlignCenter)
-            
-        self.widget_layout.addWidget(self.Label, alignment=Qt.AlignmentFlag.AlignCenter)
-        if self.addSlider:
-            self.widget_layout.addLayout(self.layoutH1)
-        self.widget_layout.addLayout(self.layoutH2)
+        self.layoutH2.addWidget(self.Text, alignment=Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
+        
+        self.widget_layout.addWidget(self.Label)
+        if self.side_label:
+            self.widget_layoutV1 = QVBoxLayout()
+            if self.addSlider:
+                self.widget_layoutV1.addLayout(self.layoutH1)
+            self.widget_layoutV1.addLayout(self.layoutH2)
+            self.widget_layout.addLayout(self.widget_layoutV1)
+        else:
+            if self.addSlider:
+                self.widget_layout.addLayout(self.layoutH1)
+            self.widget_layout.addLayout(self.layoutH2)
 
     def increaseValueByStep(self):
         value = (float(self.getText()) + self.step)
@@ -262,6 +277,8 @@ class QNumEdit(CustomQWidget):
         self.min = min_value
         self.Text.setValidator(QIntValidator(bottom=min_value))
         if self.addSlider:
+            self.Slider.setMinimum(self.min)
+            self.Min.setText(str(int(self.min) if self.decimals <= 0 else round(self.min, self.decimals)))
             if self.Slider.value() < self.min:
                 self.Slider.setValue(self.min)
 
@@ -269,6 +286,8 @@ class QNumEdit(CustomQWidget):
         self.max = max_value
         self.Text.setValidator(QIntValidator(top=max_value))
         if self.addSlider:
+            self.Slider.setMaximum(self.max)
+            self.Max.setText(str(int(self.max) if self.decimals <= 0 else round(self.max, self.decimals)))
             if self.Slider.value() > self.max:
                 self.Slider.setValue(self.max)
 

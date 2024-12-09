@@ -55,12 +55,12 @@ class Edge():
 
     def updatePositions(self):
         source_pos = self.start_socket.getSocketPosition()
-        source_pos[0] += self.start_socket.node.grNode.pos().x()
+        source_pos[0] += self.start_socket.node.grNode.pos().x() + self.start_socket.grSocket.radius + self.start_socket.grSocket._pen_output.width()
         source_pos[1] += self.start_socket.node.grNode.pos().y()
         self.grEdge.setSource(*source_pos)
         if self.end_socket is not None:
             end_pos = self.end_socket.getSocketPosition()
-            end_pos[0] += self.end_socket.node.grNode.pos().x()
+            end_pos[0] += self.end_socket.node.grNode.pos().x() - self.end_socket.grSocket.radius - self.end_socket.grSocket._pen_input.width()
             end_pos[1] += self.end_socket.node.grNode.pos().y()
             self.grEdge.setDestination(*end_pos)
 
@@ -68,7 +68,7 @@ class Edge():
         self.mousePos = mousePos
         if self.start_socket is not None:
             source_pos = self.start_socket.getSocketPosition()
-            source_pos[0] += self.start_socket.node.grNode.pos().x()
+            source_pos[0] += self.start_socket.node.grNode.pos().x() + self.start_socket.grSocket.radius + self.start_socket.grSocket._pen_output.width()
             source_pos[1] += self.start_socket.node.grNode.pos().y()
             end_pos = [0, 0]
             end_pos[0] = self.mousePos.x()
@@ -81,7 +81,7 @@ class Edge():
             source_pos[1] = self.mousePos.y()
             self.grEdge.setSource(*source_pos)
             end_pos = self.end_socket.getSocketPosition()
-            end_pos[0] += self.end_socket.node.grNode.pos().x()
+            end_pos[0] += self.end_socket.node.grNode.pos().x() - self.end_socket.grSocket.radius - self.end_socket.grSocket._pen_input.width()
             end_pos[1] += self.end_socket.node.grNode.pos().y()
             self.grEdge.setDestination(*end_pos)
         self.grEdge.update()
@@ -122,10 +122,6 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         self.posDestination = [200, 100]
 
         self.arrow_size = 10
-        if self.edge.temp:
-            self.arrow_offset = 0
-        else:
-            self.arrow_offset = 7
 
         self.setZValue(0)
 
@@ -139,6 +135,7 @@ class QDMGraphicsEdge(QGraphicsPathItem):
 
     def initUI(self):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setOpacity(self.edge.scene.parent.settings_menu.node_transparency / 100)
 
     def boundingRect(self) -> QRectF:  
         return QRectF(self.posSource[0], self.posSource[1], self.posDestination[0] - self.posSource[0], self.posDestination[1] - self.posSource[1]).normalized()
@@ -181,11 +178,11 @@ class QDMGraphicsEdge(QGraphicsPathItem):
         distY = 0
         path = QPainterPath(QPointF(s[0], s[1]))
         path.cubicTo(s[0] + distX, s[1] + distY, d[0] - distX, d[1] - distY, d[0], d[1])
-        arrow_up = QPainterPath(QPointF(d[0] - self.arrow_offset - self.arrow_size, d[1] - self.arrow_size))
-        arrow_up.lineTo(d[0] - self.arrow_offset, d[1])
+        arrow_up = QPainterPath(QPointF(d[0] - self.arrow_size, d[1] - self.arrow_size))
+        arrow_up.lineTo(d[0], d[1])
         path.addPath(arrow_up)
-        arrow_down = QPainterPath(QPointF(d[0] - self.arrow_offset - self.arrow_size, d[1] + self.arrow_size))
-        arrow_down.lineTo(d[0] - self.arrow_offset, d[1])
+        arrow_down = QPainterPath(QPointF(d[0] - self.arrow_size, d[1] + self.arrow_size))
+        arrow_down.lineTo(d[0], d[1])
         path.addPath(arrow_down)
         return path
     

@@ -599,14 +599,16 @@ class MovieMaker(ToolInstance):
         data["settings.model_refresh"] = self.frame.settings_menu.model_refresh
         data["settings.save_script_folder"] = self.frame.settings_menu.save_script_folder
         data["settings.save_log_folder"] = self.frame.settings_menu.save_log_folder
-        data["settings.nodes_transparency_title"] = self.frame.settings_menu.nodes_transparency_title
-        data["settings.nodes_transparency_background"] = self.frame.settings_menu.nodes_transparency_background
+        data["settings.node_transparency"] = self.frame.settings_menu.node_transparency
+        data["settings.help_transparency"] = self.frame.settings_menu.help_transparency
         data["settings.command_delay"] = self.frame.settings_menu.command_delay
         data["settings.allow_info_link"] = self.frame.settings_menu.allow_info_link
         data["settings.grid_squares"] = self.frame.settings_menu.grid_squares
         data["settings.grid_size"] = self.frame.settings_menu.grid_size
         data["settings.grid_snap"] = self.frame.settings_menu.grid_snap
         data["settings.viewer_refresh"] = self.frame.settings_menu.viewer_refresh
+        data["settings.viewer_minimum_size"] = self.frame.settings_menu.viewer_minimum_size
+        data["settings.viewer_size"] = self.frame.settings_menu.viewer_size
         data["log"] = self.frame.log
 
         data["style_mode"] = self.frame.theme_toggle.isChecked()
@@ -647,8 +649,8 @@ class MovieMaker(ToolInstance):
         self.frame.settings_menu.model_refresh = float(data["settings.model_refresh"])
         self.frame.settings_menu.save_script_folder = data["settings.save_script_folder"]
         self.frame.settings_menu.save_log_folder = data["settings.save_log_folder"]
-        self.frame.settings_menu.nodes_transparency_title = int(data["settings.nodes_transparency_title"])
-        self.frame.settings_menu.nodes_transparency_background = int(data["settings.nodes_transparency_background"])
+        self.frame.settings_menu.node_transparency = int(data["settings.node_transparency"])
+        self.frame.settings_menu.help_transparency = int(data["settings.help_transparency"])
         self.frame.settings_menu.command_delay = float(data["settings.command_delay"])
         self.frame.log = data["log"]
         self.frame.settings_menu.allow_info_link = bool(data["settings.allow_info_link"])
@@ -656,6 +658,8 @@ class MovieMaker(ToolInstance):
         self.frame.settings_menu.grid_size = int(data["settings.grid_size"])
         self.frame.settings_menu.grid_snap = bool(data["settings.grid_snap"])
         self.frame.settings_menu.viewer_refresh = float(data["settings.viewer_refresh"])
+        self.frame.settings_menu.viewer_minimum_size = int(data["settings.viewer_minimum_size"])
+        self.frame.settings_menu.viewer_size = int(data["settings.viewer_size"])
 
         self.frame.theme_toggle.setChecked(data["style_mode"])
         self.frame.simple_mode = not data["simple_mode"]

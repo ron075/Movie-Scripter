@@ -53,7 +53,7 @@ class Scene():
         y1:float = 0.0
         x2:float = 0.0
         y2:float = 0.0
-        for node in self.nodes:      
+        for node in self.nodes:  
             if x1 > node.pos.x() - 120:
                 x1 = node.pos.x() - 120
             if y1 > node.pos.y() - 120:
@@ -62,6 +62,7 @@ class Scene():
                 x2 = node.pos.x() + (node.grNode.node_width if node.grNode.node_width > 0 else node.grNode.width) + 120
             if y2 < node.pos.y() + (node.grNode.node_height + node.grNode.title_height if node.grNode.node_height > 0 else node.grNode.height) + 120:
                 y2 = node.pos.y() + (node.grNode.node_height + node.grNode.title_height if node.grNode.node_height > 0 else node.grNode.height) + 120
+
             for picker in node.picker_inputs:
                 if picker.edge.start_socket.node.grNode.isVisible():
                     if x1 > picker.edge.start_socket.node.pos.x() - 120:
@@ -157,11 +158,11 @@ class QDMGraphicsScene(QGraphicsScene):
         # compute all lines to be drawn
         lines_light, lines_dark = [], []
         for x in range(first_left, right, self.scene.parent.settings_menu.grid_size):
-            if (x % (self.scene.parent.settings_menu.grid_size*self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(x, top, x, bottom))
+            if (x % (self.scene.parent.settings_menu.grid_size * self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(x, top, x, bottom))
             else: lines_dark.append(QLine(x, top, x, bottom))
 
         for y in range(first_top, bottom, self.scene.parent.settings_menu.grid_size):
-            if (y % (self.scene.parent.settings_menu.grid_size*self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(left, y, right, y))
+            if (y % (self.scene.parent.settings_menu.grid_size * self.scene.parent.settings_menu.grid_squares) != 0): lines_light.append(QLine(left, y, right, y))
             else: lines_dark.append(QLine(left, y, right, y))
 
         # draw the lines
@@ -376,7 +377,7 @@ class QDMGraphicsView(QGraphicsView):
         self.verticalScrollBar().installEventFilter(self)
         self.horizontalScrollBar().installEventFilter(self)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-         
+                 
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
     def eventFilter(self, object:QObject, event:QEvent) -> bool:
@@ -431,14 +432,15 @@ class QDMGraphicsView(QGraphicsView):
         self.last_lmb_click_scene_pos = self.mapToScene(event.pos())
         if item is not None:
             if type(item) is QGraphicsTextItem or type(item) is QGraphicsProxyWidget:
-                if type(item.parentItem()) is QDMGraphicsNode:
-                    if item.parentItem().node.removable:
-                        item.parentItem().node.summary.resetOutputValues()
-                        self.removeNode(item.parentItem().node)
-                elif type(item.parentItem()) is QDMGraphicsSocket:
-                    if item.parentItem().socket.node.removable:
-                        item.parentItem().socket.node.summary.resetOutputValues()
-                        self.removeNode(item.parentItem().socket.node)        
+                parent_item = item.parentItem()
+                if type(parent_item) is QDMGraphicsNode:
+                    if parent_item.node.removable:
+                        parent_item.node.summary.resetOutputValues()
+                        self.removeNode(parent_item.node)
+                elif type(parent_item) is QDMGraphicsSocket:
+                    if parent_item.socket.node.removable:
+                        parent_item.socket.node.summary.resetOutputValues()
+                        self.removeNode(parent_item.socket.node)        
             elif type(item) is QDMGraphicsNode:
                 if item.node.removable:
                     item.node.summary.resetOutputValues()
@@ -558,9 +560,10 @@ class QDMGraphicsView(QGraphicsView):
                     self.draw_temp_edge = TempEdgeType.DESTINATION                        
                     self.temp_edge = Edge(scene=self.viewParent.scene, start_socket=None, end_socket=self.end_socket.socket, removable=True, temp=True, mousePos=self.mapToScene(event.pos()))
         elif type(item) is QGraphicsProxyWidget:
-            if hasattr(item, "node"):
-                if NodeType(item.parentItem().node.nodeType) == NodeType.Picker:
-                    item.parentItem().setSelected(True)
+            parent_item = item.parentItem()
+            if type(parent_item) is QDMGraphicsNode:
+                if NodeType(parent_item.node.nodeType) == NodeType.Picker:
+                    parent_item.setSelected(True)
         super().mousePressEvent(event)
 
     def leftMouseButtonNoModifierRelease(self, event:QMouseEvent):
@@ -577,8 +580,9 @@ class QDMGraphicsView(QGraphicsView):
 
         if item is not None:
             if type(item) is QGraphicsTextItem or type(item) is QGraphicsProxyWidget:
-                if type(item.parentItem()) is QDMGraphicsNode:
-                    item.parentItem().node.setPos(item.parentItem().node.pos.x(), item.parentItem().node.pos.y())  
+                parent_item = item.parentItem()
+                if type(parent_item) is QDMGraphicsNode:
+                    parent_item.node.setPos(parent_item.node.pos.x(), parent_item.node.pos.y())  
             elif type(item) is QDMGraphicsNode:                    
                 item.node.setPos(item.node.pos.x(), item.node.pos.y())  
             elif type(item) is QDMGraphicsSocket:

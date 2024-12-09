@@ -140,6 +140,10 @@ class Node():
         if delete_input:
             self.inputs_counter += 1
 
+        self.node_input:Socket|None = None
+        self.node_output:Socket|None = None
+        self.picker_inputs:list[Socket] = []
+
         self.grNode = QDMGraphicsNode(self, self.inputs_counter)
         self.setPos(pos_x, pos_y)
 
@@ -154,10 +158,7 @@ class Node():
         self.scene.grScene.addItem(self.grNode)
 
         self.socket_spacing = 22
-        self.node_input:Socket|None = None
-        self.node_output:Socket|None = None
-        self.picker_inputs:list[Socket] = []
-        
+
         counter = 0
         if model_input:
             socket = Socket(node=self, index=counter, position=Position.LEFT_TOP, socket_type=SocketType.MODEL_SOCKET)
@@ -314,6 +315,10 @@ class Node():
             self.grNode.setPos(self.scene.parent.settings_menu.grid_size * round(x / self.scene.parent.settings_menu.grid_size), self.scene.parent.settings_menu.grid_size * round(y / self.scene.parent.settings_menu.grid_size))
         else:
             self.grNode.setPos(x, y)
+        for inp in [self.node_input] + self.picker_inputs:
+            if inp is not None:
+                if inp.hasEdge():
+                    inp.edge.updatePositions()
     
     def getSocketPosition(self, index:int, position:Position) -> list[int]:
         width = self.grNode.node_width if self.grNode.node_width > 0 else self.grNode.width
@@ -393,6 +398,7 @@ class QDMGraphicsNode(QGraphicsItem):
 
         self._brush_title_color = QColor("#FF313131")
         self._brush_background_color = QColor("#E3212121")
+
         self.updateBrushesAlpha()
 
         # init title
@@ -418,8 +424,13 @@ class QDMGraphicsNode(QGraphicsItem):
             return QRectF(0, 0, self.checkWidth(), self.checkHeight(self.node.socket_spacing * (self.node.inputs_counter - 1))).normalized()
 
     def updateBrushesAlpha(self):
-        self._brush_title_color.setAlphaF(self.node.scene.parent.settings_menu.nodes_transparency_title / 100)
-        self._brush_background_color.setAlphaF(self.node.scene.parent.settings_menu.nodes_transparency_background / 100)
+        self.setOpacity(self.node.scene.parent.settings_menu.node_transparency / 100)
+        for child in self.childItems():
+            child.setOpacity(self.node.scene.parent.settings_menu.node_transparency / 100)
+        for inp in [self.node.node_input] + self.node.picker_inputs:
+            if inp is not None:
+                if inp.hasEdge():
+                    inp.edge.grEdge.setOpacity(self.node.scene.parent.settings_menu.node_transparency / 100)
         self._brush_title = QBrush(self._brush_title_color)
         self._brush_background = QBrush(self._brush_background_color)
         self.update()

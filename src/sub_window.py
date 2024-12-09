@@ -25,6 +25,9 @@ class SettingsMenu(CustomQWidget):
 
         self.moving=False
         self.offset = 0
+        self.settings_width = 300
+        self.width_margin_factor = 0.9
+        self.settings_height = 400
 
         self.settings_widgets:dict[str,QWidget] = {}
 
@@ -36,8 +39,9 @@ class SettingsMenu(CustomQWidget):
         self.save_script_folder = ""
         self.save_log_folder = ""
 
-        self.nodes_transparency_title:int = 100
-        self.nodes_transparency_background:int = 90
+        self.node_transparency:int = 100
+
+        self.help_transparency:int = 100
 
         self.command_delay:float = 1.0
         self.model_refresh:float = 1.0
@@ -49,9 +53,13 @@ class SettingsMenu(CustomQWidget):
         self.grid_squares:int = 5
         self.grid_snap:bool = True
 
+        self.viewer_minimum_size:int = 0
+        self.viewer_size:int = 0
+
         self.update_model = False
         self.update_folder = False
         self.update_nodes = False
+        self.update_help = False
         self.update_run = False
         self.update_info = False
         self.update_grid = False
@@ -72,33 +80,32 @@ class SettingsMenu(CustomQWidget):
 
         self.model_layout = QGridLayout()
         self.lModelResidues = QLabel("Residues")   
-        self.lModelResidues.setMinimumWidth(100)
+        self.lModelResidues.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.ModelResidues = QSwitchControl(self.parent_window, checked=self.model_residues)
         self.lModelAtoms = QLabel("Atoms")   
-        self.lModelAtoms.setMinimumWidth(100)
+        self.lModelAtoms.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.ModelAtoms = QSwitchControl(self.parent_window, checked=self.model_atoms)
         self.lModelHetero = QLabel("Hetero")   
-        self.lModelHetero.setMinimumWidth(100)
+        self.lModelHetero.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.ModelHetero = QSwitchControl(self.parent_window, checked=self.model_hetero)
-        self.lModelWater = QLabel("Water")   
-        self.lModelWater.setMinimumWidth(100)
+        self.lModelWater = QLabel("Water") 
+        self.lModelWater.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)  
         self.ModelWater = QSwitchControl(self.parent_window, checked=self.model_water)
         self.ModelResidues.stateChanged.connect(self.updateModelAtoms)
-        self.ModelRefresh = QNumEdit(0, decimals = 1, label = "Refresh Rate (sec)")
-        self.ModelRefresh.Label.setFixedWidth(150)
+        self.ModelRefresh = QNumEdit(0, decimals = 1, side_label = True, label = "Refresh<br>Rate<br>(sec)", label_align=Qt.AlignmentFlag.AlignLeft)
         self.ModelRefresh.setText(self.model_refresh)
         self.ResetModel = QPushButton("Reset")
         self.ResetModel.clicked.connect(self.resetModel)
-        self.model_layout.addWidget(self.lModelResidues, 0, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelResidues, 0, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelAtoms, 1, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelAtoms, 1, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelHetero, 2, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelHetero, 2, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.lModelWater, 3, 0, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ModelWater, 3, 1, 1, 1, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addLayout(self.ModelRefresh.widget_layout, 4, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
-        self.model_layout.addWidget(self.ResetModel, 5, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
+        self.model_layout.addWidget(self.lModelResidues, 0, 0, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.ModelResidues, 0, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.lModelAtoms, 0, 2, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.ModelAtoms, 0, 3, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.lModelHetero, 1, 0, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.ModelHetero, 1, 1, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.lModelWater, 1, 2, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.ModelWater, 1, 3, 1, 1, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addLayout(self.ModelRefresh.widget_layout, 2, 0, 2, 4, Qt.AlignmentFlag.AlignLeft)
+        self.model_layout.addWidget(self.ResetModel, 4, 0, 1, 4, Qt.AlignmentFlag.AlignCenter)
 
         self.model_widget.setLayout(self.model_layout)
         self.model_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -112,14 +119,14 @@ class SettingsMenu(CustomQWidget):
         self.SaveScriptFolder.clicked.connect(self.pickSaveScriptFolder)
         self.lSaveScriptFolder = QTextEdit()
         self.lSaveScriptFolder.setText("No Folder")
-        self.lSaveScriptFolder.setFixedWidth(150)
+        self.lSaveScriptFolder.setFixedWidth(int(self.settings_width * self.width_margin_factor))
         self.lSaveScriptFolder.setFixedHeight(75)
         self.lSaveScriptFolder.setReadOnly(True)
         self.SaveLogFolder = QPushButton("Log Save Folder")
         self.SaveLogFolder.clicked.connect(self.pickSaveLogFolder)
         self.lSaveLogFolder = QTextEdit()
         self.lSaveLogFolder.setText("No Folder")
-        self.lSaveLogFolder.setFixedWidth(150)
+        self.lSaveLogFolder.setFixedWidth(int(self.settings_width * self.width_margin_factor))
         self.lSaveLogFolder.setFixedHeight(75)
         self.lSaveLogFolder.setReadOnly(True)
         self.ResetFolder = QPushButton("Reset")
@@ -128,7 +135,7 @@ class SettingsMenu(CustomQWidget):
         self.folder_layout.addWidget(self.lSaveScriptFolder, 1, 0, 3, 1, alignment=Qt.AlignmentFlag.AlignCenter)
         self.folder_layout.addWidget(self.SaveLogFolder, 4, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
         self.folder_layout.addWidget(self.lSaveLogFolder, 5, 0, 3, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.folder_layout.addWidget(self.ResetFolder, 8, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.folder_layout.addWidget(self.ResetFolder, 8, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.folder_widget.setLayout(self.folder_layout)
         self.folder_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -138,33 +145,45 @@ class SettingsMenu(CustomQWidget):
         self.nodes_widget = QWidget()
 
         self.nodes_layout = QGridLayout()
-        self.NodeTransparencyTitle = QNumEdit(0, 100, label = "Title Transparency", addSlider = True)
-        self.NodeTransparencyTitle.Label.setFixedWidth(150)
-        self.NodeTransparencyTitle.setText(self.nodes_transparency_title)
-        self.NodeTransparencyBackground = QNumEdit(0, 100, label = "Background Transparency", addSlider = True)
-        self.NodeTransparencyBackground.Label.setFixedWidth(170)
-        self.NodeTransparencyBackground.setText(self.nodes_transparency_background)
+        self.NodeTransparency = QNumEdit(0, 100, label = "Transparency", addSlider = True)
+        self.NodeTransparency.Label.setMinimumWidth(int(self.settings_width * self.width_margin_factor))
+        self.NodeTransparency.setText(self.node_transparency)
         self.ResetNodes = QPushButton("Reset")
         self.ResetNodes.clicked.connect(self.resetNodes)
-        self.nodes_layout.addLayout(self.NodeTransparencyTitle.widget_layout, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.nodes_layout.addLayout(self.NodeTransparencyBackground.widget_layout, 1, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.nodes_layout.addWidget(self.ResetNodes, 2, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.nodes_layout.addLayout(self.NodeTransparency.widget_layout, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.nodes_layout.addWidget(self.ResetNodes, 1, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.nodes_widget.setLayout(self.nodes_layout)
         self.nodes_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
 
 
+        self.help_widget = QWidget()
+
+        self.help_layout = QGridLayout()
+        self.HelpTransparency = QNumEdit(0, 100, label = "Transparency", addSlider = True)
+        self.HelpTransparency.Label.setMinimumWidth(int(self.settings_width * self.width_margin_factor))
+        self.HelpTransparency.setText(self.help_transparency)
+        self.ResetHelp = QPushButton("Reset")
+        self.ResetHelp.clicked.connect(self.resetHelp)
+        self.help_layout.addLayout(self.HelpTransparency.widget_layout, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.help_layout.addWidget(self.ResetHelp, 1, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.help_widget.setLayout(self.help_layout)
+        self.help_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+
+
         self.run_widget = QWidget()
 
         self.run_layout = QGridLayout()
-        self.CommandDelay = QNumEdit(0, decimals = 1, label = "Command Delay (sec)")
-        self.CommandDelay.Label.setFixedWidth(150)
+        self.CommandDelay = QNumEdit(0, decimals = 1, side_label = True, label = "Command<br>Delay<br>(sec)", label_align=Qt.AlignmentFlag.AlignLeft)
+        self.CommandDelay.Label.setMinimumWidth(70)
         self.CommandDelay.setText(self.command_delay)
         self.ResetRun = QPushButton("Reset")
         self.ResetRun.clicked.connect(self.resetRun)
-        self.run_layout.addLayout(self.CommandDelay.widget_layout, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.run_layout.addWidget(self.ResetRun, 1, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.run_layout.addLayout(self.CommandDelay.widget_layout, 0, 0, 2, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.run_layout.addWidget(self.ResetRun, 2, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.run_widget.setLayout(self.run_layout)
         self.run_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -173,17 +192,16 @@ class SettingsMenu(CustomQWidget):
 
         self.info_widget = QWidget()
 
-        self.info_layout = QVBoxLayout()
-        self.lInfoLink = QLabel("Enable Info Link")   
-        self.lInfoLink.setMinimumWidth(100)
-        self.lInfoLink.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.info_layout = QGridLayout()
+        self.lInfoLink = QLabel("Enable<br>Info<br>Link")   
+        self.lInfoLink.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.InfoLink = QSwitchControl(self.parent_window, checked=self.allow_info_link)
         self.InfoLink.stateChanged.connect(self.change_info)
         self.ResetInfo = QPushButton("Reset")
-        self.ResetInfo.clicked.connect(self.resetInfoLink)
-        self.info_layout.addWidget(self.lInfoLink, alignment= Qt.AlignmentFlag.AlignCenter)
-        self.info_layout.addWidget(self.InfoLink, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.info_layout.addWidget(self.ResetInfo, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.ResetInfo.clicked.connect(self.resetInfo)
+        self.info_layout.addWidget(self.lInfoLink, 0, 0, 2, 1, alignment= Qt.AlignmentFlag.AlignLeft)
+        self.info_layout.addWidget(self.InfoLink, 0, 1, 2, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.info_layout.addWidget(self.ResetInfo, 2, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.info_widget.setLayout(self.info_layout)
         self.info_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -192,27 +210,25 @@ class SettingsMenu(CustomQWidget):
 
         self.grid_widget = QWidget()
 
-        self.grid_layout = QVBoxLayout()
-        self.GridSquares = QNumEdit(1, label = "Squares Count")
-        self.GridSquares.Label.setFixedWidth(150)
+        self.grid_layout = QGridLayout()
+        self.GridSquares = QNumEdit(1, side_label = True, label = "Squares<br>Count", label_align = Qt.AlignmentFlag.AlignLeft)
         self.GridSquares.setText(self.grid_squares)
         self.GridSquares.Text.textChanged.connect(self.change_grid)
-        self.GridSize = QNumEdit(1, label = "Square Size",)
-        self.GridSize.Label.setFixedWidth(150)
+        self.GridSize = QNumEdit(1, side_label = True, label = "Square<br>Size", label_align = Qt.AlignmentFlag.AlignLeft)
         self.GridSize.setText(self.grid_size)
         self.GridSize.Text.textChanged.connect(self.change_grid)
-        self.lGridSnap = QLabel("Enable Grid Snapping")   
-        self.lGridSnap.setMinimumWidth(150)
-        self.lGridSnap.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lGridSnap = QLabel("Enable Grid\nSnapping")   
+        self.lGridSnap.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.lGridSnap.setMinimumWidth(int(self.settings_width * self.width_margin_factor))
         self.GridSnap = QSwitchControl(self.parent_window, checked=self.allow_info_link)
         self.GridSnap.stateChanged.connect(self.change_grid)
         self.ResetGrid = QPushButton("Reset")
         self.ResetGrid.clicked.connect(self.resetGrid)
-        self.grid_layout.addLayout(self.GridSquares.widget_layout)
-        self.grid_layout.addLayout(self.GridSize.widget_layout)
-        self.grid_layout.addWidget(self.lGridSnap, alignment= Qt.AlignmentFlag.AlignCenter)
-        self.grid_layout.addWidget(self.GridSnap, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.grid_layout.addWidget(self.ResetGrid, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.grid_layout.addLayout(self.GridSquares.widget_layout, 0, 0, 2, 2, alignment= Qt.AlignmentFlag.AlignLeft)
+        self.grid_layout.addLayout(self.GridSize.widget_layout, 0, 2, 2, 2, alignment= Qt.AlignmentFlag.AlignRight)
+        self.grid_layout.addWidget(self.lGridSnap, 2, 0, 2, 1, alignment= Qt.AlignmentFlag.AlignLeft)
+        self.grid_layout.addWidget(self.GridSnap, 2, 1, 2, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.grid_layout.addWidget(self.ResetGrid, 4, 0, 1, 4, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.grid_widget.setLayout(self.grid_layout)
         self.grid_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -222,13 +238,24 @@ class SettingsMenu(CustomQWidget):
         self.viewer_widget = QWidget()
 
         self.viewer_layout = QGridLayout()
-        self.ViewerRefresh = QNumEdit(0, decimals = 1, label = "Refresh Rate (sec)")
-        self.ViewerRefresh.Label.setFixedWidth(150)
+        self.ViewerMinimumSize = QNumEdit(0, self.parent_window.layoutS1.width(), label = "Minimum Width", addSlider = True)
+        self.ViewerMinimumSize.Label.setMinimumWidth(int(self.settings_width * self.width_margin_factor))
+        self.ViewerMinimumSize.setText(self.viewer_minimum_size)
+        self.ViewerSize = QNumEdit(0, self.parent_window.layoutS1.width(), decimals = 0, label = "Width", addSlider = True)
+        self.ViewerSize.Label.setMinimumWidth(int(self.settings_width * self.width_margin_factor))
+        self.ViewerSize.setText(self.viewer_size)
+        self.ModelResidues.stateChanged.connect(self.updateModelAtoms)
+        self.ViewerMinimumSize.Text.textChanged.connect(self.updateViewerSize)
+        self.ViewerMinimumSize.Minus.clicked.connect(self.updateViewerSize)
+        self.ViewerMinimumSize.Plus.clicked.connect(self.updateViewerSize)
+        self.ViewerRefresh = QNumEdit(0, side_label = True, label = "Refresh<br>Rate<br>(sec)", label_align = Qt.AlignmentFlag.AlignLeft)
         self.ViewerRefresh.setText(self.viewer_refresh)
         self.ResetViewer = QPushButton("Reset")
         self.ResetViewer.clicked.connect(self.resetViewer)
-        self.viewer_layout.addLayout(self.ViewerRefresh.widget_layout, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.viewer_layout.addWidget(self.ResetViewer, 1, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.viewer_layout.addLayout(self.ViewerMinimumSize.widget_layout, 0, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.viewer_layout.addLayout(self.ViewerSize.widget_layout, 1, 0, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.viewer_layout.addLayout(self.ViewerRefresh.widget_layout, 2, 0, 2, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.viewer_layout.addWidget(self.ResetViewer, 4, 0, 2, 1, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.viewer_widget.setLayout(self.viewer_layout)
         self.viewer_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -238,14 +265,17 @@ class SettingsMenu(CustomQWidget):
         self.settings_widgets["Model"] = self.model_widget
         self.settings_widgets["Folder"] = self.folder_widget
         self.settings_widgets["Nodes"] = self.nodes_widget
+        self.settings_widgets["Help"] = self.help_widget
         self.settings_widgets["Run"] = self.run_widget
         self.settings_widgets["Info"] = self.info_widget
         self.settings_widgets["Grid"] = self.grid_widget
         self.settings_widgets["Viewer"] = self.viewer_widget
 
         for widget in self.settings_widgets.values():
+            widget.setMaximumWidth(int(self.settings_width))
             self.settings_scroll.setWidget(widget)
-            self.settings_scroll.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+            self.settings_scroll.setAlignment(Qt.AlignmentFlag.AlignLeft
+                                               | Qt.AlignmentFlag.AlignTop)
             changeCursor(widget.children())
             self.settings_scroll.takeWidget()
             widget.setObjectName("settings")
@@ -255,8 +285,8 @@ class SettingsMenu(CustomQWidget):
         
         self.settings_scroll.setWidget(self.settings_widgets[self.options.currentItem().text()])
         self.settings_scroll.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum) 
-        self.settings_scroll.setMinimumWidth(200) 
-        self.settings_scroll.setMinimumHeight(300)
+        self.settings_scroll.setMinimumWidth(self.settings_width) 
+        self.settings_scroll.setMinimumHeight(self.settings_height)
 
         self.options_layout.addWidget(self.options)
         self.options_layout.addWidget(self.settings_scroll)
@@ -321,8 +351,9 @@ class SettingsMenu(CustomQWidget):
                 self.save_log_folder = ""
                 self.lSaveLogFolder.setText("No Folder")
 
-            self.NodeTransparencyTitle.setText(self.nodes_transparency_title)
-            self.NodeTransparencyBackground.setText(self.nodes_transparency_background)
+            self.NodeTransparency.setText(self.node_transparency)
+
+            self.HelpTransparency.setText(self.help_transparency)
 
             self.CommandDelay.setText(self.command_delay)
 
@@ -389,6 +420,15 @@ class SettingsMenu(CustomQWidget):
         else:
             self.update_grid = False
 
+    def setViewerMaximumSize(self, viewer_maximum_size:int):
+        self.ViewerMinimumSize.setMax(viewer_maximum_size)
+        self.ViewerSize.setMax(viewer_maximum_size)
+
+    def updateViewerSize(self):
+        if int(self.ViewerSize.getText()) < int(self.ViewerMinimumSize.getText()):
+            self.ViewerSize.setText(self.ViewerMinimumSize.getText())
+        self.ViewerSize.setMin(int(self.ViewerMinimumSize.getText()))
+
     def resetModel(self):
         self.ModelResidues.setChecked(True)
         self.ModelAtoms.setChecked(False)
@@ -401,13 +441,15 @@ class SettingsMenu(CustomQWidget):
         self.lSaveLogFolder.setText("No Folder")
 
     def resetNodes(self):
-        self.nodes_transparency_title = 100
-        self.nodes_transparency_background = 90
+        self.node_transparency = 100
+
+    def resetHelp(self):
+        self.help_transparency = 100
 
     def resetRun(self):
         self.command_delay = 1.0
 
-    def resetInfoLink(self):
+    def resetInfo(self):
         self.InfoLink.setChecked(True)
 
     def resetGrid(self):
@@ -417,14 +459,17 @@ class SettingsMenu(CustomQWidget):
         self.GridSnap.setChecked(True)
 
     def resetViewer(self):
-        self.viewer_refresh = 1.0
+        self.ViewerRefresh.setText(1.0)
+        self.ViewerMinimumSize.setText(0)
+        self.ViewerSize.setText(0)
 
     def applySettings(self, cancel:bool=False):
         self.update_model = (self.model_hetero != self.ModelHetero.isChecked() or self.model_water != self.ModelWater.isChecked() or 
                              self.model_residues != self.ModelResidues.isChecked() or self.model_atoms != self.ModelAtoms.isChecked() or 
                              float(self.ModelRefresh.getText()) != self.model_refresh)
         self.update_folder = (self.save_script_folder != "No Folder" or self.save_log_folder != "No Folder")
-        self.update_nodes = (int(self.NodeTransparencyTitle.getText()) != self.nodes_transparency_title or int(self.NodeTransparencyBackground.getText()) != self.nodes_transparency_background)
+        self.update_nodes = (int(self.NodeTransparency.getText()) != self.node_transparency)
+        self.update_help = (int(self.HelpTransparency.getText()) != self.help_transparency)
         self.update_run = (float(self.CommandDelay.getText()) != self.command_delay)
         self.update_info = (self.InfoLink.isChecked() != self.allow_info_link)
         self.update_grid = (int(self.GridSquares.getText()) != self.grid_squares or int(self.GridSize.getText()) != self.grid_size or
@@ -451,13 +496,16 @@ class SettingsMenu(CustomQWidget):
             self.save_log_folder = self.lSaveLogFolder.toPlainText()
             self.update_folder = False
         if self.update_nodes:
-            self.nodes_transparency_title = int(self.NodeTransparencyTitle.getText())
-            self.nodes_transparency_background = int(self.NodeTransparencyBackground.getText())
+            self.node_transparency = int(self.NodeTransparency.getText())
             for node in self.parent_window.scene.nodes:
                 node.grNode.updateBrushesAlpha()
                 for picker in node.picker_inputs:
                     picker.edge.start_socket.node.grNode.updateBrushesAlpha()
             self.update_nodes = False
+        if self.update_help:
+            self.help_transparency = int(self.HelpTransparency.getText())
+            self.parent_window.help_menu.grHelp.updateBrushesAlpha()
+            self.update_help = False
         if self.update_run:
             self.command_delay = float(self.CommandDelay.getText())
             self.update_run = False
@@ -474,6 +522,8 @@ class SettingsMenu(CustomQWidget):
             self.update_grid = False
         if self.update_viewer:
             self.viewer_refresh = float(self.ViewerRefresh.getText())
+            self.viewer_minimum_size = int(self.ViewerMinimumSize.getText())
+            self.viewer_size = int(self.ViewerSize.getText())
             self.update_viewer = False
 
         self.parent_window.settings_button.setProperty("State", "Closed")
@@ -534,7 +584,7 @@ class Help(CustomQWidget):
     def initUI(self):
         self.main_layout = QVBoxLayout()
         self.main_layout.setSpacing(5)
-        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setContentsMargins(5, 10, 5, 5)
         self.setLayout(self.main_layout)
 
         self.Tab = QTabWidget()    
@@ -597,14 +647,16 @@ class QDMGraphicsHelpMenu(QGraphicsItem):
         self._pen_default.setWidth(2)
         self._pen_default.setStyle(Qt.PenStyle.SolidLine)
         self._brush_background_color = QColor("#E3212121")
+        
         self.updateBrushesAlpha()
 
         self.initUI()
         self.initHelp()
 
     def updateBrushesAlpha(self):
-        #self._brush_title_color.setAlphaF(self.node.scene.parent.settings_menu.nodes_transparency_title / 100)
-        #self._brush_background_color.setAlphaF(self.node.scene.parent.settings_menu.nodes_transparency_background / 100)
+        self.setOpacity(self.help.help_menu.nodeEditor.settings_menu.help_transparency / 100)
+        for child in self.childItems():
+            child.setOpacity(self.help.help_menu.nodeEditor.settings_menu.help_transparency / 100)
         self._brush_background = QBrush(self._brush_background_color)
         self.update()
 
